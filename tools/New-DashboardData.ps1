@@ -382,10 +382,25 @@ else {
         throw "Файл не найден: $InputPath"
     }
     $json = Get-Content -LiteralPath $InputPath -Raw -Encoding UTF8
-    try {
-        $null = $json | ConvertFrom-Json
-    } catch {
-        throw "JSON не разбирается: $($_.Exception.Message)"
+
+    # ConvertFrom-Json в PowerShell 5.1 захлёбывается на документах больше
+    # пары мегабайт. Для крупных файлов ограничиваемся дешёвой проверкой
+    # структуры: полный разбор всё равно сделает браузер при расшифровке,
+    # и неверный JSON вылезет там сразу.
+    $sizeMb = [System.Text.Encoding]::UTF8.GetByteCount($json) / 1MB
+    if ($sizeMb -lt 2) {
+        try {
+            $null = $json | ConvertFrom-Json
+        } catch {
+            throw "JSON не разбирается: $($_.Exception.Message)"
+        }
+    }
+    else {
+        $trimmed = $json.Trim()
+        if (-not ($trimmed.StartsWith('{') -and $trimmed.EndsWith('}'))) {
+            throw 'Файл не похож на JSON-объект: нет обрамляющих фигурных скобок.'
+        }
+        Write-Host ("  Файл {0:N1} МБ - полный разбор пропущен (ограничение PS 5.1)" -f $sizeMb) -ForegroundColor DarkGray
     }
 
     if (-not $User) { $User = Read-Host 'Логин' }

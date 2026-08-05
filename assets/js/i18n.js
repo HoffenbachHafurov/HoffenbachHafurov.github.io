@@ -96,6 +96,46 @@
         "Шаблон готов и ждёт наполнения. Следующий шаг — выгрузить показатели из SP-API и зашифровать их в файл данных.",
       "empty.noRows": "За выбранный период данных нет",
 
+      "nav.mainMenu": "Главное меню",
+      "nav.analytics": "Аналитика",
+      "nav.catalog": "Каталог",
+      "nav.operations": "Операции",
+      "nav.system": "Система",
+
+      "page.salesAnalysis": "Анализ продаж",
+      "page.overview": "Обзор продаж",
+      "page.products": "Товары",
+      "page.inventory": "Запасы",
+      "page.orders": "Заказы",
+      "page.returns": "Возвраты",
+      "page.settings": "Настройки",
+      "page.soon": "скоро",
+      "page.soonText":
+        "Этот раздел ещё не наполнен. Каркас готов — содержимое добавим следующим шагом.",
+
+      "kpi.netProceeds": "Чистый доход",
+      "kpi.fees": "Комиссии Amazon",
+      "kpi.feeShare": "Доля комиссий",
+      "kpi.refunds": "Возвраты",
+      "kpi.ofRevenue": "от выручки",
+
+      "chart.revenueVsNet": "Выручка и чистый доход по дням",
+      "chart.revenueVsNetCaption":
+        "Чистый доход = выручка минус все комиссии Amazon и реклама. Обе величины в одной валюте, поэтому шкала одна.",
+      "chart.feeMix": "Структура расходов",
+      "chart.feeMixCaption": "Доля каждого типа комиссии в общих расходах за период.",
+      "chart.feesByType": "Комиссии по типам",
+      "chart.feesByTypeCaption":
+        "Referral Fee приходит из API под именем Commission. Хранение и размещение появляются в те дни, когда Amazon их начисляет.",
+      "chart.topByNet": "Товары по чистому доходу",
+      "chart.topByNetCaption": "Десять позиций с наибольшим чистым доходом за период.",
+
+      "table.feeType": "Тип комиссии",
+      "table.amount": "Сумма",
+      "table.netProceeds": "Чистый доход",
+      "table.ordered": "Заказано",
+      "table.refunded": "Возвращено",
+
       "footer.note": "Статическая страница. Все расчёты идут в браузере.",
       "a11y.skipToContent": "Перейти к содержимому",
       "a11y.chartTable": "Табличное представление графика"
@@ -182,6 +222,46 @@
         "The template is ready and waiting to be filled. Next step: export the metrics from SP-API and encrypt them into the data file.",
       "empty.noRows": "No data for the selected period",
 
+      "nav.mainMenu": "Main menu",
+      "nav.analytics": "Analytics",
+      "nav.catalog": "Catalog",
+      "nav.operations": "Operations",
+      "nav.system": "System",
+
+      "page.salesAnalysis": "Sales analysis",
+      "page.overview": "Sales overview",
+      "page.products": "Products",
+      "page.inventory": "Inventory",
+      "page.orders": "Orders",
+      "page.returns": "Returns",
+      "page.settings": "Settings",
+      "page.soon": "soon",
+      "page.soonText":
+        "This section is not filled in yet. The frame is ready — content comes next.",
+
+      "kpi.netProceeds": "Net proceeds",
+      "kpi.fees": "Amazon fees",
+      "kpi.feeShare": "Fee share",
+      "kpi.refunds": "Refunds",
+      "kpi.ofRevenue": "of revenue",
+
+      "chart.revenueVsNet": "Revenue and net proceeds by day",
+      "chart.revenueVsNetCaption":
+        "Net proceeds = revenue minus all Amazon fees and advertising. Both are the same currency, so they share one scale.",
+      "chart.feeMix": "Cost breakdown",
+      "chart.feeMixCaption": "Each fee type's share of total costs for the period.",
+      "chart.feesByType": "Fees by type",
+      "chart.feesByTypeCaption":
+        "The referral fee arrives from the API as Commission. Storage and placement appear on the days Amazon charges them.",
+      "chart.topByNet": "Products by net proceeds",
+      "chart.topByNetCaption": "The ten positions with the highest net proceeds.",
+
+      "table.feeType": "Fee type",
+      "table.amount": "Amount",
+      "table.netProceeds": "Net proceeds",
+      "table.ordered": "Ordered",
+      "table.refunded": "Refunded",
+
       "footer.note": "A static page. Every calculation runs in your browser.",
       "a11y.skipToContent": "Skip to content",
       "a11y.chartTable": "Table view of the chart"
@@ -267,6 +347,46 @@
       "empty.text":
         "Шаблон готовий і чекає на наповнення. Наступний крок — вивантажити показники з SP-API та зашифрувати їх у файл даних.",
       "empty.noRows": "За обраний період даних немає",
+
+      "nav.mainMenu": "Головне меню",
+      "nav.analytics": "Аналітика",
+      "nav.catalog": "Каталог",
+      "nav.operations": "Операції",
+      "nav.system": "Система",
+
+      "page.salesAnalysis": "Аналіз продажів",
+      "page.overview": "Огляд продажів",
+      "page.products": "Товари",
+      "page.inventory": "Запаси",
+      "page.orders": "Замовлення",
+      "page.returns": "Повернення",
+      "page.settings": "Налаштування",
+      "page.soon": "скоро",
+      "page.soonText":
+        "Цей розділ ще не наповнено. Каркас готовий — вміст додамо наступним кроком.",
+
+      "kpi.netProceeds": "Чистий дохід",
+      "kpi.fees": "Комісії Amazon",
+      "kpi.feeShare": "Частка комісій",
+      "kpi.refunds": "Повернення",
+      "kpi.ofRevenue": "від виторгу",
+
+      "chart.revenueVsNet": "Виторг і чистий дохід за днями",
+      "chart.revenueVsNetCaption":
+        "Чистий дохід = виторг мінус усі комісії Amazon та реклама. Обидві величини в одній валюті, тож шкала одна.",
+      "chart.feeMix": "Структура витрат",
+      "chart.feeMixCaption": "Частка кожного типу комісії у загальних витратах за період.",
+      "chart.feesByType": "Комісії за типами",
+      "chart.feesByTypeCaption":
+        "Referral Fee надходить з API під назвою Commission. Зберігання та розміщення з'являються в ті дні, коли Amazon їх нараховує.",
+      "chart.topByNet": "Товари за чистим доходом",
+      "chart.topByNetCaption": "Десять позицій з найбільшим чистим доходом за період.",
+
+      "table.feeType": "Тип комісії",
+      "table.amount": "Сума",
+      "table.netProceeds": "Чистий дохід",
+      "table.ordered": "Замовлено",
+      "table.refunded": "Повернено",
 
       "footer.note": "Статична сторінка. Усі обчислення відбуваються у браузері.",
       "a11y.skipToContent": "Перейти до вмісту",

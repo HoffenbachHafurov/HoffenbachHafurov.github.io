@@ -14,8 +14,8 @@
 
 <script>
 /* Тема применяется ДО первой отрисовки: иначе при системной тёмной
-   успевает мигнуть светлый фон. Язык ставится здесь же — по той же причине
-   (атрибут lang влияет на переносы и на озвучку скринридером). */
+   успевает мигнуть светлый фон. Язык ставится здесь же — атрибут lang
+   влияет на переносы и на озвучку скринридером. */
 (function () {
   try {
     var pref = localStorage.getItem("dashboard.theme") || "system";
@@ -126,150 +126,270 @@
 </div>
 
 <!-- =====================================================================
-     Дашборд
+     Рабочее пространство: меню слева, содержимое справа
      ================================================================== -->
 <div class="app" id="app-view" hidden>
 
-  <header class="appbar">
-    <div class="appbar__brand">
-      <svg class="appbar__mark" viewBox="0 0 32 32" aria-hidden="true">
+  <!-- ---------------------------------------------------------- меню --- -->
+  <aside class="sidebar" id="sidebar" data-i18n-attr="aria-label:nav.mainMenu">
+
+    <div class="sidebar__brand">
+      <svg class="sidebar__mark" viewBox="0 0 32 32" aria-hidden="true">
         <rect width="32" height="32" rx="7" fill="var(--series-1)"></rect>
         <path d="M8 21V13M14 21V9M20 21V16M26 21V11" stroke="#fff"
               stroke-width="2.6" stroke-linecap="round"></path>
       </svg>
       <div>
-        <div class="appbar__title" data-i18n="app.title">Amazon Sales Dashboard</div>
-        <div class="appbar__meta" id="updated-at"></div>
+        <div class="sidebar__title" data-i18n="app.title">Amazon</div>
+        <div class="sidebar__subtitle" id="sidebar-store"></div>
       </div>
     </div>
 
-    <div class="appbar__tools">
-      <div class="segmented" role="group" id="app-lang"
-           data-i18n-attr="aria-label:nav.language"></div>
-      <div class="segmented" role="group" id="app-theme"
-           data-i18n-attr="aria-label:nav.theme"></div>
+    <nav class="sidebar__nav" id="sidebar-nav">
+      <!-- Пункты меню строятся из описания в app.js: там же лежат
+           заголовки для i18n, поэтому дублировать разметку не нужно -->
+    </nav>
+
+    <div class="sidebar__footer">
       <button class="btn btn--ghost" id="sign-out" type="button" data-i18n="nav.signOut">
         Sign out
       </button>
     </div>
-  </header>
+  </aside>
 
-  <main class="main" id="main">
+  <!-- ------------------------------------------------------ содержимое --- -->
+  <div class="content">
 
-    <!-- Один ряд фильтров на всё, что ниже. Внутрь карточек фильтры не кладём -->
-    <section class="filters" id="filters" aria-labelledby="filters-heading">
-      <h2 class="sr-only" id="filters-heading" data-i18n="filter.period">Period</h2>
-
-      <div class="filters__group">
-        <label class="field__label" for="filter-period" data-i18n="filter.period">Period</label>
-        <select class="select" id="filter-period"></select>
-      </div>
-
-      <div class="filters__group">
-        <label class="field__label" for="filter-currency" data-i18n="filter.currency">Currency</label>
-        <select class="select" id="filter-currency"></select>
-      </div>
-
-      <div class="filters__group">
-        <label class="field__label" for="filter-marketplace" data-i18n="filter.marketplace">Marketplace</label>
-        <select class="select" id="filter-marketplace"></select>
-      </div>
-
-      <p class="filters__note" data-i18n="filter.note"></p>
-    </section>
-
-    <!-- Пустое состояние: показывается, пока данные не наполнены -->
-    <section class="card" id="empty-state" hidden>
-      <div class="empty">
-        <svg class="empty__icon" width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M4 19V6M9 19V10M14 19V13M19 19V8" stroke="currentColor"
-                stroke-width="1.6" stroke-linecap="round"></path>
-          <path d="M3 21h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+    <header class="topbar">
+      <button class="btn btn--icon menu-toggle" id="menu-toggle" type="button"
+              data-i18n-attr="aria-label:nav.mainMenu" aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor"
+                stroke-width="1.9" stroke-linecap="round"></path>
         </svg>
-        <div class="empty__title" data-i18n="empty.title">No data yet</div>
-        <p class="empty__text" data-i18n="empty.text"></p>
+      </button>
+
+      <div class="topbar__heading">
+        <div class="topbar__title" id="page-title"></div>
+        <div class="topbar__meta" id="updated-at"></div>
       </div>
-    </section>
 
-    <div id="dashboard" hidden>
+      <div class="topbar__tools">
+        <div class="segmented" role="group" id="app-lang"
+             data-i18n-attr="aria-label:nav.language"></div>
+        <div class="segmented" role="group" id="app-theme"
+             data-i18n-attr="aria-label:nav.theme"></div>
+      </div>
+    </header>
 
-      <!-- Ряд показателей. Ведущее число — выручка, ровно одно на весь экран -->
-      <section class="grid" aria-labelledby="kpi-heading" style="margin-bottom:var(--sp-4)">
-        <h2 class="sr-only" id="kpi-heading" data-i18n="kpi.revenue">Revenue</h2>
+    <main class="main" id="main">
 
-        <div class="card span-6 rows-2 stat stat--hero" id="kpi-revenue"></div>
-        <div class="card span-3 stat" id="kpi-units"></div>
-        <div class="card span-3 stat" id="kpi-orders"></div>
-        <div class="card span-3 stat" id="kpi-avg"></div>
-        <div class="card span-3 stat" id="kpi-skus"></div>
+      <!-- Один ряд фильтров на всё, что ниже. Внутрь карточек не кладём -->
+      <section class="filters" id="filters" aria-labelledby="filters-heading">
+        <h2 class="sr-only" id="filters-heading" data-i18n="filter.period">Period</h2>
+
+        <div class="filters__group">
+          <label class="field__label" for="filter-period" data-i18n="filter.period">Period</label>
+          <select class="select" id="filter-period"></select>
+        </div>
+
+        <div class="filters__group">
+          <label class="field__label" for="filter-currency" data-i18n="filter.currency">Currency</label>
+          <select class="select" id="filter-currency"></select>
+        </div>
+
+        <div class="filters__group">
+          <label class="field__label" for="filter-marketplace" data-i18n="filter.marketplace">Marketplace</label>
+          <select class="select" id="filter-marketplace"></select>
+        </div>
+
+        <p class="filters__note" data-i18n="filter.note"></p>
       </section>
 
-      <section class="grid grid--top">
-
-        <!-- Выручка по дням -->
-        <figure class="card span-8" id="card-revenue">
-          <div class="card__head">
-            <div>
-              <figcaption class="card__title" data-i18n="chart.revenueOverTime"></figcaption>
-              <div class="card__subtitle" id="revenue-range"></div>
-            </div>
-            <button class="card__toggle" type="button" data-table-toggle="revenue"
-                    aria-pressed="false" data-i18n="table.show"></button>
-          </div>
-          <div class="chart" id="chart-revenue"></div>
-          <div id="table-revenue" hidden></div>
-          <p class="card__caption" data-i18n="chart.revenueOverTimeCaption"></p>
-        </figure>
-
-        <!-- Доли витрин -->
-        <figure class="card span-4" id="card-marketplace">
-          <div class="card__head">
-            <div>
-              <figcaption class="card__title" data-i18n="chart.byMarketplace"></figcaption>
-            </div>
-            <button class="card__toggle" type="button" data-table-toggle="marketplace"
-                    aria-pressed="false" data-i18n="table.show"></button>
-          </div>
-          <div class="chart" id="chart-marketplace"></div>
-          <div id="legend-marketplace"></div>
-          <div id="table-marketplace" hidden></div>
-          <p class="card__caption" data-i18n="chart.byMarketplaceCaption"></p>
-        </figure>
-
-        <!-- Штуки по дням -->
-        <figure class="card span-6" id="card-units">
-          <div class="card__head">
-            <div>
-              <figcaption class="card__title" data-i18n="chart.unitsOverTime"></figcaption>
-            </div>
-            <button class="card__toggle" type="button" data-table-toggle="units"
-                    aria-pressed="false" data-i18n="table.show"></button>
-          </div>
-          <div class="chart" id="chart-units"></div>
-          <div id="table-units" hidden></div>
-        </figure>
-
-        <!-- Топ товаров -->
-        <figure class="card span-6" id="card-skus">
-          <div class="card__head">
-            <div>
-              <figcaption class="card__title" data-i18n="chart.topSkus"></figcaption>
-            </div>
-            <button class="card__toggle" type="button" data-table-toggle="skus"
-                    aria-pressed="false" data-i18n="table.show"></button>
-          </div>
-          <div class="chart" id="chart-skus"></div>
-          <div id="table-skus" hidden></div>
-          <p class="card__caption" data-i18n="chart.topSkusCaption"></p>
-        </figure>
-
+      <section class="card" id="empty-state" hidden>
+        <div class="empty">
+          <svg class="empty__icon" width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 19V6M9 19V10M14 19V13M19 19V8" stroke="currentColor"
+                  stroke-width="1.6" stroke-linecap="round"></path>
+            <path d="M3 21h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+          </svg>
+          <div class="empty__title" data-i18n="empty.title">No data yet</div>
+          <p class="empty__text" data-i18n="empty.text"></p>
+        </div>
       </section>
-    </div>
-  </main>
 
-  <footer class="footer">
-    <span data-i18n="footer.note"></span>
-  </footer>
+      <!-- ============================================================
+           Страница: Анализ продаж
+           ========================================================= -->
+      <div id="page-sales" class="page" hidden>
+
+        <section class="grid" aria-labelledby="sales-kpi-heading" style="margin-bottom:var(--sp-4)">
+          <h2 class="sr-only" id="sales-kpi-heading" data-i18n="page.salesAnalysis">Sales analysis</h2>
+
+          <div class="card span-6 rows-2 stat stat--hero" id="s-kpi-net"></div>
+          <div class="card span-3 stat" id="s-kpi-revenue"></div>
+          <div class="card span-3 stat" id="s-kpi-fees"></div>
+          <div class="card span-3 stat" id="s-kpi-feeshare"></div>
+          <div class="card span-3 stat" id="s-kpi-refunds"></div>
+        </section>
+
+        <section class="grid grid--top">
+
+          <!-- Выручка и чистый доход: обе величины в одной валюте,
+               поэтому одна шкала. Двух осей Y здесь быть не должно. -->
+          <figure class="card span-8" id="card-s-trend">
+            <div class="card__head">
+              <div>
+                <figcaption class="card__title" data-i18n="chart.revenueVsNet"></figcaption>
+                <div class="card__subtitle" id="s-trend-range"></div>
+              </div>
+              <button class="card__toggle" type="button" data-table-toggle="s-trend"
+                      aria-pressed="false" data-i18n="table.show"></button>
+            </div>
+            <div class="chart" id="chart-s-trend"></div>
+            <div id="legend-s-trend"></div>
+            <div id="table-s-trend" hidden></div>
+            <p class="card__caption" data-i18n="chart.revenueVsNetCaption"></p>
+          </figure>
+
+          <!-- Структура расходов: часть-целое -> стопочная полоса -->
+          <figure class="card span-4" id="card-s-mix">
+            <div class="card__head">
+              <div>
+                <figcaption class="card__title" data-i18n="chart.feeMix"></figcaption>
+              </div>
+              <button class="card__toggle" type="button" data-table-toggle="s-mix"
+                      aria-pressed="false" data-i18n="table.show"></button>
+            </div>
+            <div class="chart" id="chart-s-mix"></div>
+            <div id="legend-s-mix"></div>
+            <div id="table-s-mix" hidden></div>
+            <p class="card__caption" data-i18n="chart.feeMixCaption"></p>
+          </figure>
+
+          <!-- Комиссии по типам: одна серия -> один цвет на все столбцы -->
+          <figure class="card span-6" id="card-s-fees">
+            <div class="card__head">
+              <div>
+                <figcaption class="card__title" data-i18n="chart.feesByType"></figcaption>
+              </div>
+              <button class="card__toggle" type="button" data-table-toggle="s-fees"
+                      aria-pressed="false" data-i18n="table.show"></button>
+            </div>
+            <div class="chart" id="chart-s-fees"></div>
+            <div id="table-s-fees" hidden></div>
+            <p class="card__caption" data-i18n="chart.feesByTypeCaption"></p>
+          </figure>
+
+          <figure class="card span-6" id="card-s-products">
+            <div class="card__head">
+              <div>
+                <figcaption class="card__title" data-i18n="chart.topByNet"></figcaption>
+              </div>
+              <button class="card__toggle" type="button" data-table-toggle="s-products"
+                      aria-pressed="false" data-i18n="table.show"></button>
+            </div>
+            <div class="chart" id="chart-s-products"></div>
+            <div id="table-s-products" hidden></div>
+            <p class="card__caption" data-i18n="chart.topByNetCaption"></p>
+          </figure>
+
+        </section>
+      </div>
+
+      <!-- ============================================================
+           Страница: Обзор продаж
+           ========================================================= -->
+      <div id="page-overview" class="page" hidden>
+
+        <section class="grid" aria-labelledby="kpi-heading" style="margin-bottom:var(--sp-4)">
+          <h2 class="sr-only" id="kpi-heading" data-i18n="kpi.revenue">Revenue</h2>
+
+          <div class="card span-6 rows-2 stat stat--hero" id="kpi-revenue"></div>
+          <div class="card span-3 stat" id="kpi-units"></div>
+          <div class="card span-3 stat" id="kpi-orders"></div>
+          <div class="card span-3 stat" id="kpi-avg"></div>
+          <div class="card span-3 stat" id="kpi-skus"></div>
+        </section>
+
+        <section class="grid grid--top">
+
+          <figure class="card span-8" id="card-revenue">
+            <div class="card__head">
+              <div>
+                <figcaption class="card__title" data-i18n="chart.revenueOverTime"></figcaption>
+                <div class="card__subtitle" id="revenue-range"></div>
+              </div>
+              <button class="card__toggle" type="button" data-table-toggle="revenue"
+                      aria-pressed="false" data-i18n="table.show"></button>
+            </div>
+            <div class="chart" id="chart-revenue"></div>
+            <div id="table-revenue" hidden></div>
+            <p class="card__caption" data-i18n="chart.revenueOverTimeCaption"></p>
+          </figure>
+
+          <figure class="card span-4" id="card-marketplace">
+            <div class="card__head">
+              <div>
+                <figcaption class="card__title" data-i18n="chart.byMarketplace"></figcaption>
+              </div>
+              <button class="card__toggle" type="button" data-table-toggle="marketplace"
+                      aria-pressed="false" data-i18n="table.show"></button>
+            </div>
+            <div class="chart" id="chart-marketplace"></div>
+            <div id="legend-marketplace"></div>
+            <div id="table-marketplace" hidden></div>
+            <p class="card__caption" data-i18n="chart.byMarketplaceCaption"></p>
+          </figure>
+
+          <figure class="card span-6" id="card-units">
+            <div class="card__head">
+              <div>
+                <figcaption class="card__title" data-i18n="chart.unitsOverTime"></figcaption>
+              </div>
+              <button class="card__toggle" type="button" data-table-toggle="units"
+                      aria-pressed="false" data-i18n="table.show"></button>
+            </div>
+            <div class="chart" id="chart-units"></div>
+            <div id="table-units" hidden></div>
+          </figure>
+
+          <figure class="card span-6" id="card-skus">
+            <div class="card__head">
+              <div>
+                <figcaption class="card__title" data-i18n="chart.topSkus"></figcaption>
+              </div>
+              <button class="card__toggle" type="button" data-table-toggle="skus"
+                      aria-pressed="false" data-i18n="table.show"></button>
+            </div>
+            <div class="chart" id="chart-skus"></div>
+            <div id="table-skus" hidden></div>
+            <p class="card__caption" data-i18n="chart.topSkusCaption"></p>
+          </figure>
+
+        </section>
+      </div>
+
+      <!-- Заглушка для разделов, которых ещё нет -->
+      <div id="page-placeholder" class="page" hidden>
+        <section class="card">
+          <div class="empty">
+            <svg class="empty__icon" width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.6"></rect>
+              <path d="M3 10h18" stroke="currentColor" stroke-width="1.6"></path>
+            </svg>
+            <div class="empty__title" id="placeholder-title"></div>
+            <p class="empty__text" data-i18n="page.soonText"></p>
+          </div>
+        </section>
+      </div>
+
+    </main>
+
+    <footer class="footer">
+      <span data-i18n="footer.note"></span>
+    </footer>
+  </div>
 </div>
 
 <!-- Порядок важен: i18n и Fmt нужны charts.js и app.js -->
