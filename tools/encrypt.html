@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Шифрование данных дашборда</title>
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/app.css">
+<style>
+  .tool { max-width: 860px; margin: 0 auto; padding: var(--sp-5); display: flex;
+          flex-direction: column; gap: var(--sp-4); }
+  textarea { width: 100%; min-height: 200px; font-family: ui-monospace, "Cascadia Mono",
+             Consolas, monospace; font-size: 12px; padding: var(--sp-3);
+             border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+             background: var(--surface-raised); color: var(--text-primary); resize: vertical; }
+  .row { display: flex; gap: var(--sp-3); flex-wrap: wrap; }
+  .row > .field { flex: 1 1 200px; }
+  code { font-family: ui-monospace, Consolas, monospace;
+         background: var(--surface-sunken); padding: 1px 5px; border-radius: 4px; }
+  ol { padding-inline-start: 1.2em; }
+  li { margin-bottom: var(--sp-2); }
+</style>
+</head>
+<body>
+
+<div class="tool">
+
+  <h1 class="card__title" style="font-size:1.25rem">Шифрование данных дашборда</h1>
+
+  <div class="alert alert--info">
+    <span>
+      Страница работает <strong>локально</strong>: ничего никуда не отправляется, шифрование
+      идёт в вашем браузере. Пароль в файл не попадает — из него выводится только ключ.
+      Эту утилиту не нужно открывать с сайта, достаточно открыть файл с диска.
+    </span>
+  </div>
+
+  <section class="card">
+    <h2 class="card__title">1. Данные</h2>
+    <p class="card__caption">
+      Вставьте JSON по контракту из README или нажмите «Демо-набор», чтобы посмотреть формат.
+    </p>
+    <div class="row">
+      <button class="btn" type="button" id="btn-demo">Демо-набор</button>
+      <label class="btn" style="cursor:pointer">
+        Загрузить .json<input type="file" id="file" accept=".json,application/json" hidden>
+      </label>
+      <span class="card__caption" id="size-note" style="align-self:center"></span>
+    </div>
+    <textarea id="json" spellcheck="false" placeholder='{ "meta": {...}, "days": [...], "skus": [...] }'></textarea>
+  </section>
+
+  <section class="card">
+    <h2 class="card__title">2. Логин и пароль</h2>
+    <p class="card__caption">
+      Эта пара — единственный способ открыть данные. Забудете — восстановить нечем,
+      придётся пересобрать файл заново. Пароль берите длинный: репозиторий публичный,
+      значит шифротекст доступен для офлайнового перебора.
+    </p>
+    <div class="row">
+      <div class="field">
+        <label class="field__label" for="user">Логин</label>
+        <input class="input" id="user" type="text" autocomplete="off" value="">
+      </div>
+      <div class="field">
+        <label class="field__label" for="pass">Пароль</label>
+        <input class="input" id="pass" type="text" autocomplete="off" value="">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label class="field__label" for="hint">Подсказка (необязательно, видна всем)</label>
+        <input class="input" id="hint" type="text" autocomplete="off"
+               placeholder="например: как обычно">
+      </div>
+      <div class="field">
+        <label class="field__label" for="iter">Итераций PBKDF2</label>
+        <input class="input" id="iter" type="number" min="100000" step="50000" value="600000">
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="card__title">3. Результат</h2>
+    <div class="row">
+      <button class="btn btn--primary" type="button" id="btn-run">Зашифровать</button>
+      <button class="btn" type="button" id="btn-download" disabled>Скачать dashboard.enc.js</button>
+      <button class="btn" type="button" id="btn-copy" disabled>Скопировать</button>
+      <span class="card__caption" id="status" style="align-self:center"></span>
+    </div>
+    <textarea id="output" spellcheck="false" readonly
+              placeholder="Здесь появится содержимое файла data/dashboard.enc.js"></textarea>
+    <p class="card__caption">
+      Готовый файл положить в репозиторий по пути <code>data/dashboard.enc.js</code>,
+      заменив прежний.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2 class="card__title">Проверка</h2>
+    <p class="card__caption">
+      Расшифровать только что собранный файл тем же логином и паролем — убедиться,
+      что он открывается.
+    </p>
+    <div class="row">
+      <button class="btn" type="button" id="btn-verify" disabled>Проверить расшифровку</button>
+      <span class="card__caption" id="verify-status" style="align-self:center"></span>
+    </div>
+  </section>
+
+</div>
+
+<script src="../assets/js/vault.js"></script>
+<script src="demo-data.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var $ = function (id) { return document.getElementById(id); };
+  var lastOutput = "";
+  var lastPayload = null;
+
+  function setStatus(node, text, ok) {
+    node.textContent = text;
+    node.style.color = ok === true ? "var(--delta-good)"
+      : ok === false ? "var(--status-critical)" : "var(--text-muted)";
+  }
+
+  function noteSize() {
+    var bytes = new Blob([$("json").value]).size;
+    setStatus($("size-note"), bytes ? (bytes / 1024).toFixed(1) + " КБ исходного JSON" : "");
+  }
+
+  $("json").addEventListener("input", noteSize);
+
+  $("btn-demo").addEventListener("click", function () {
+    $("json").value = JSON.stringify(window.buildDemoData(), null, 2);
+    noteSize();
+  });
+
+  $("file").addEventListener("change", function (e) {
+    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function () { $("json").value = String(reader.result); noteSize(); };
+    reader.readAsText(f);
+  });
+
+  function wrapAsJs(payload) {
+    return "/* Зашифрованные данные дашборда. Сгенерировано tools/encrypt.html.\n" +
+      "   Открывается только парой логин+пароль, из которой выводится ключ.\n" +
+      "   Пароль здесь не хранится — ни в открытом виде, ни хешем. */\n" +
+      "window.DASHBOARD_PAYLOAD = " + JSON.stringify(payload, null, 2) + ";\n";
+  }
+
+  $("btn-run").addEventListener("click", function () {
+    var raw = $("json").value.trim();
+    if (!raw) { setStatus($("status"), "Пустой JSON", false); return; }
+    var data;
+    try {
+      data = JSON.parse(raw);
+    } catch (err) {
+      setStatus($("status"), "JSON не разбирается: " + err.message, false);
+      return;
+    }
+    if (!$("pass").value) { setStatus($("status"), "Задайте пароль", false); return; }
+
+    setStatus($("status"), "Шифрование…");
+    $("btn-run").disabled = true;
+
+    window.Vault.encrypt(data, $("user").value, $("pass").value, {
+      iterations: parseInt($("iter").value, 10) || 600000,
+      hint: $("hint").value,
+      createdAt: new Date().toISOString()
+    }).then(function (payload) {
+      lastPayload = payload;
+      lastOutput = wrapAsJs(payload);
+      $("output").value = lastOutput;
+      $("btn-download").disabled = false;
+      $("btn-copy").disabled = false;
+      $("btn-verify").disabled = false;
+      $("btn-run").disabled = false;
+      var kb = (new Blob([lastOutput]).size / 1024).toFixed(1);
+      setStatus($("status"), "Готово · " + kb + " КБ · сжатие: " + payload.compression, true);
+    }).catch(function (err) {
+      $("btn-run").disabled = false;
+      setStatus($("status"), "Ошибка: " + err.message, false);
+    });
+  });
+
+  $("btn-download").addEventListener("click", function () {
+    var blob = new Blob([lastOutput], { type: "text/javascript" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "dashboard.enc.js";
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
+
+  $("btn-copy").addEventListener("click", function () {
+    navigator.clipboard.writeText(lastOutput).then(function () {
+      setStatus($("status"), "Скопировано", true);
+    });
+  });
+
+  $("btn-verify").addEventListener("click", function () {
+    if (!lastPayload) return;
+    setStatus($("verify-status"), "Проверка…");
+    window.Vault.decrypt(lastPayload, $("user").value, $("pass").value)
+      .then(function (data) {
+        var days = (data.days || []).length;
+        var skus = (data.skus || []).length;
+        setStatus($("verify-status"),
+          "Расшифровано: строк по дням " + days + ", строк по SKU " + skus, true);
+      })
+      .catch(function (err) {
+        setStatus($("verify-status"), "Не расшифровалось: " + err.message, false);
+      });
+  });
+
+  /* --- Автоматический режим для сборки демо-файла ------------------------
+     tools/encrypt.html?auto=1&user=demo&pass=…  собирает демо-набор,
+     шифрует и кладёт результат в #output. Используется headless-браузером
+     при подготовке репозитория. */
+  var params = new URLSearchParams(location.search);
+  if (params.get("auto")) {
+    $("user").value = params.get("user") || "demo";
+    $("pass").value = params.get("pass") || "demo";
+    $("hint").value = params.get("hint") || "";
+    $("json").value = JSON.stringify(window.buildDemoData());
+    window.__AUTO_DONE__ = false;
+    /* Результат кладётся не только в textarea, но и в <pre>: значение
+       textarea живёт в свойстве .value и в дамп DOM не попадает. */
+    var dump = function (text, ok) {
+      var pre = document.createElement("pre");
+      pre.id = "auto-dump";
+      pre.textContent = text;
+      document.body.appendChild(pre);
+      window.__AUTO_DONE__ = true;
+      document.title = ok ? "READY" : "ERROR";
+    };
+    window.Vault.encrypt(window.buildDemoData(), $("user").value, $("pass").value, {
+      iterations: parseInt(params.get("iter") || "600000", 10),
+      hint: $("hint").value,
+      createdAt: params.get("at") || ""
+    }).then(function (payload) {
+      var text = wrapAsJs(payload);
+      $("output").value = text;
+      dump(text, true);
+    }).catch(function (err) {
+      dump("ERROR: " + err.message, false);
+    });
+  }
+})();
+</script>
+</body>
+</html>
