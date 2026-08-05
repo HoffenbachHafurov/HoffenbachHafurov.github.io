@@ -21,8 +21,8 @@
 
 .PARAMETER Demo
     Вместо чтения файла собрать синтетический демонстрационный набор.
-    Логин и пароль при этом фиксированные и публичные: demo / demo-2026.
-    Реальных продаж в этом наборе нет.
+    Без -User логин и пароль будут публичными: demo / demo-2026.
+    С -User скрипт спросит собственный пароль. Реальных продаж в наборе нет.
 
 .PARAMETER User
     Логин, который будет открывать дашборд.
@@ -35,10 +35,15 @@
 
 .EXAMPLE
     .\New-DashboardData.ps1 -Demo
-    Собирает демо-набор под парой demo / demo-2026.
+    Собирает демо-набор под публичной парой demo / demo-2026.
 
 .EXAMPLE
-    .\New-DashboardData.ps1 -InputPath .\sales.json -User vitaliy
+    .\New-DashboardData.ps1 -Demo -User Hafurov
+    Тот же демо-набор, но под своим логином и собственным паролем.
+    Годится, чтобы проверить вход до появления реальных данных.
+
+.EXAMPLE
+    .\New-DashboardData.ps1 -InputPath .\sales.json -User Hafurov
     Спросит пароль и зашифрует реальные данные.
 #>
 [CmdletBinding(DefaultParameterSetName = 'File')]
@@ -49,7 +54,6 @@ param(
     [Parameter(ParameterSetName = 'Demo', Mandatory = $true)]
     [switch]$Demo,
 
-    [Parameter(ParameterSetName = 'File')]
     [string]$User,
 
     [string]$OutPath,
@@ -297,14 +301,50 @@ function New-EncryptedPayload {
 #  Основной ход
 # ---------------------------------------------------------------------------
 
+# Пароль спрашивается ТОЛЬКО здесь и только через SecureString.
+# Параметром командной строки он осел бы в истории PSReadLine открытым текстом.
+function Request-Password {
+    $secure = Read-Host 'Пароль' -AsSecureString
+    $secure2 = Read-Host 'Пароль ещё раз' -AsSecureString
+    $plain = ConvertFrom-SecureStringPlain -Secure $secure
+    $confirm = ConvertFrom-SecureStringPlain -Secure $secure2
+    if ($plain -ne $confirm) { throw 'Пароли не совпали' }
+    if ($plain.Length -eq 0) { throw 'Пустой пароль' }
+
+    # Репозиторий публичный: шифротекст доступен для офлайнового перебора без
+    # ограничения попыток. Единственная преграда - стойкость самого пароля.
+    $weak = @('qwerty', 'password', 'admin', '12345', 'amazon', 'dashboard', 'qwe123')
+    $lower = $plain.ToLowerInvariant()
+    foreach ($w in $weak) {
+        if ($lower.Contains($w)) {
+            Write-Warning "Пароль содержит '$w' - это словарная основа, она подбирается за секунды. Возьмите случайную фразу."
+            break
+        }
+    }
+    if ($plain.Length -lt 16) {
+        Write-Warning "Пароль короче 16 символов ($($plain.Length)). Для публичного шифротекста этого мало - возьмите длинную случайную фразу."
+    }
+    return $plain
+}
+
 if ($Demo) {
     Write-Host 'Собираю демонстрационный набор...' -ForegroundColor Cyan
     $dataset = New-DemoDataset
     $json = $dataset | ConvertTo-Json -Depth 10 -Compress
-    $login = 'demo'
-    $password = 'demo-2026'
-    if (-not $Hint) { $Hint = 'demo / demo-2026 - демонстрационные данные' }
-    Write-Host 'Демо-пара логин/пароль публична и указана в README.' -ForegroundColor Yellow
+
+    if ($User) {
+        # Демо-данные, но под собственной парой: удобно проверить вход
+        # до того, как появятся реальные цифры
+        $login = $User
+        Write-Host "Логин: $login. Задайте пароль." -ForegroundColor Cyan
+        $password = Request-Password
+    }
+    else {
+        $login = 'demo'
+        $password = 'demo-2026'
+        if (-not $Hint) { $Hint = 'demo / demo-2026 - демонстрационные данные' }
+        Write-Host 'Демо-пара логин/пароль публична и указана в README.' -ForegroundColor Yellow
+    }
 }
 else {
     if (-not (Test-Path -LiteralPath $InputPath)) {
@@ -319,16 +359,7 @@ else {
 
     if (-not $User) { $User = Read-Host 'Логин' }
     $login = $User
-
-    # Пароль только через SecureString: параметром он попал бы в историю команд
-    $secure = Read-Host 'Пароль' -AsSecureString
-    $secure2 = Read-Host 'Пароль ещё раз' -AsSecureString
-    $password = ConvertFrom-SecureStringPlain -Secure $secure
-    $confirm = ConvertFrom-SecureStringPlain -Secure $secure2
-    if ($password -ne $confirm) { throw 'Пароли не совпали' }
-    if ($password.Length -lt 12) {
-        Write-Warning 'Пароль короче 12 символов. Репозиторий публичный, шифротекст доступен для офлайнового перебора - возьмите длиннее.'
-    }
+    $password = Request-Password
 }
 
 $sizeKb = [math]::Round(([System.Text.Encoding]::UTF8.GetByteCount($json)) / 1KB, 1)
@@ -364,5 +395,4 @@ Write-Host 'Проверьте вход на странице перед ком�
 
 # Затираем пароль в памяти скрипта
 $password = $null
-$confirm = $null
 [GC]::Collect()
