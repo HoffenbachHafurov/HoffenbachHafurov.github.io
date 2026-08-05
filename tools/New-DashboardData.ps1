@@ -27,6 +27,13 @@
 .PARAMETER User
     Логин, который будет открывать дашборд.
 
+.PARAMETER Password
+    Пароль как SecureString - для автоматизации, когда он приходит из
+    хранилища секретов. Без этого параметра скрипт спросит его сам.
+    ⚠️ Не собирать SecureString из открытой строки прямо в командной строке:
+    исходный текст осядет в истории PSReadLine. Только Get-Credential,
+    Import-CliXml или менеджер секретов.
+
 .PARAMETER OutPath
     Куда записать результат. По умолчанию ..\data\dashboard.enc.js
 
@@ -55,6 +62,8 @@ param(
     [switch]$Demo,
 
     [string]$User,
+
+    [System.Security.SecureString]$Password,
 
     [string]$OutPath,
 
@@ -222,7 +231,10 @@ function New-EncryptedPayload {
     param(
         [string]$Json,
         [string]$Login,
-        [string]$Password,
+        # Открытый текст здесь неизбежен: из него выводится ключ.
+        # Имя намеренно не 'Password', чтобы не путать с публичным
+        # параметром скрипта, который принимает SecureString.
+        [string]$KeyPhrase,
         [int]$Iterations,
         [bool]$UseGzip,
         [string]$Hint
@@ -240,7 +252,7 @@ function New-EncryptedPayload {
     if ($UseGzip) { $body = Compress-Gzip -Bytes $body }
 
     # Тот же материал ключа, что и в vault.js: логин нормализуется, пароль - нет
-    $material = $utf8.GetBytes(($Login.Trim().ToLowerInvariant()) + "`n" + $Password)
+    $material = $utf8.GetBytes(($Login.Trim().ToLowerInvariant()) + "`n" + $KeyPhrase)
 
     $kdf = New-Object System.Security.Cryptography.Rfc2898DeriveBytes(
         $material, $salt, $Iterations, [System.Security.Cryptography.HashAlgorithmName]::SHA256)
@@ -303,12 +315,23 @@ function New-EncryptedPayload {
 
 # Пароль спрашивается ТОЛЬКО здесь и только через SecureString.
 # Параметром командной строки он осел бы в истории PSReadLine открытым текстом.
+#
+# ⚠️ Открытый текст держим в $secretPhrase, а НЕ в $password: имена переменных
+# в PowerShell нечувствительны к регистру, поэтому $password - это тот же
+# самый $Password, что и параметр скрипта. Присвоение строки в переменную,
+# объявленную как [SecureString], роняет скрипт с ошибкой преобразования типа.
 function Request-Password {
-    $secure = Read-Host 'Пароль' -AsSecureString
-    $secure2 = Read-Host 'Пароль ещё раз' -AsSecureString
-    $plain = ConvertFrom-SecureStringPlain -Secure $secure
-    $confirm = ConvertFrom-SecureStringPlain -Secure $secure2
-    if ($plain -ne $confirm) { throw 'Пароли не совпали' }
+    if ($null -ne $Password) {
+        # Пришёл параметром - режим автоматизации, спрашивать нечего
+        $plain = ConvertFrom-SecureStringPlain -Secure $Password
+    }
+    else {
+        $secure = Read-Host 'Пароль' -AsSecureString
+        $secure2 = Read-Host 'Пароль ещё раз' -AsSecureString
+        $plain = ConvertFrom-SecureStringPlain -Secure $secure
+        $confirm = ConvertFrom-SecureStringPlain -Secure $secure2
+        if ($plain -ne $confirm) { throw 'Пароли не совпали' }
+    }
     if ($plain.Length -eq 0) { throw 'Пустой пароль' }
 
     # Репозиторий публичный: шифротекст доступен для офлайнового перебора без
@@ -337,11 +360,11 @@ if ($Demo) {
         # до того, как появятся реальные цифры
         $login = $User
         Write-Host "Логин: $login. Задайте пароль." -ForegroundColor Cyan
-        $password = Request-Password
+        $secretPhrase = Request-Password
     }
     else {
         $login = 'demo'
-        $password = 'demo-2026'
+        $secretPhrase = 'demo-2026'
         if (-not $Hint) { $Hint = 'demo / demo-2026 - демонстрационные данные' }
         Write-Host 'Демо-пара логин/пароль публична и указана в README.' -ForegroundColor Yellow
     }
@@ -359,13 +382,13 @@ else {
 
     if (-not $User) { $User = Read-Host 'Логин' }
     $login = $User
-    $password = Request-Password
+    $secretPhrase = Request-Password
 }
 
 $sizeKb = [math]::Round(([System.Text.Encoding]::UTF8.GetByteCount($json)) / 1KB, 1)
 Write-Host "Исходный JSON: $sizeKb КБ" -ForegroundColor Gray
 
-$payload = New-EncryptedPayload -Json $json -Login $login -Password $password `
+$payload = New-EncryptedPayload -Json $json -Login $login -KeyPhrase $secretPhrase `
     -Iterations $Iterations -UseGzip (-not $NoCompress) -Hint $Hint
 
 $payloadJson = $payload | ConvertTo-Json -Depth 5
@@ -394,5 +417,5 @@ Write-Host "Размер: $outKb КБ, сжатие: $($payload.compression), и
 Write-Host 'Проверьте вход на странице перед коммитом.' -ForegroundColor Gray
 
 # Затираем пароль в памяти скрипта
-$password = $null
+$secretPhrase = $null
 [GC]::Collect()
