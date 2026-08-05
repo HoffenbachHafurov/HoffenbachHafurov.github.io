@@ -71,7 +71,11 @@ param(
 
     [int]$Iterations = 600000,
 
-    [switch]$NoCompress
+    [switch]$NoCompress,
+
+    # Отключает предупреждения о стойкости пароля. Для случая, когда выбор
+    # сделан осознанно и напоминать о нём не нужно.
+    [switch]$AllowWeakPassword
 )
 
 Set-StrictMode -Version Latest
@@ -336,16 +340,20 @@ function Request-Password {
 
     # Репозиторий публичный: шифротекст доступен для офлайнового перебора без
     # ограничения попыток. Единственная преграда - стойкость самого пароля.
-    $weak = @('qwerty', 'password', 'admin', '12345', 'amazon', 'dashboard', 'qwe123')
-    $lower = $plain.ToLowerInvariant()
-    foreach ($w in $weak) {
-        if ($lower.Contains($w)) {
-            Write-Warning "Пароль содержит '$w' - это словарная основа, она подбирается за секунды. Возьмите случайную фразу."
-            break
+    # Ключ -AllowWeakPassword глушит эти предупреждения: если выбор сделан
+    # осознанно, повторять его на каждой пересборке незачем.
+    if (-not $AllowWeakPassword) {
+        $weak = @('qwerty', 'password', 'admin', '12345', 'amazon', 'dashboard', 'qwe123')
+        $lower = $plain.ToLowerInvariant()
+        foreach ($w in $weak) {
+            if ($lower.Contains($w)) {
+                Write-Warning "Пароль содержит '$w' - это словарная основа, она подбирается за секунды. Возьмите случайную фразу или запустите с -AllowWeakPassword, чтобы больше не спрашивать."
+                break
+            }
         }
-    }
-    if ($plain.Length -lt 16) {
-        Write-Warning "Пароль короче 16 символов ($($plain.Length)). Для публичного шифротекста этого мало - возьмите длинную случайную фразу."
+        if ($plain.Length -lt 16) {
+            Write-Warning "Пароль короче 16 символов ($($plain.Length)). Для публичного шифротекста этого мало."
+        }
     }
     return $plain
 }
