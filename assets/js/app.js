@@ -974,22 +974,25 @@
     var feeMap = {};
     feeRows.forEach(function (r) {
       var key = r.feeType || "—";
-      /* Знак сохраняем: Amazon отдаёт списания отрицательными, а возмещения
-         (например, FBAInventoryReimbursement) — положительными. Если взять
-         модуль, возврат денег продавцу попадёт в расходы и завысит их. */
+      /* Знак сохраняем. В Data Kiosk (analytics_economics) СПИСАНИЯ приходят
+         ПОЛОЖИТЕЛЬНЫМИ, а возвраты денег продавцу — отрицательными:
+         FbaFulfilmentFee +966 657, FBAInventoryReimbursement −8 674.
+         Проверяется тождеством netProceeds = netSales − fees − ads,
+         которое сходится копейка в копейку только при таком знаке.
+         Брать модуль нельзя: возмещение попадёт в расходы и завысит их. */
       feeMap[key] = (feeMap[key] || 0) + (Number(r.amount) || 0);
     });
 
     var feeSigned = Object.keys(feeMap).map(function (k) {
       return { id: k, label: k, signed: feeMap[k] };
     });
-    /* Расходы — то, что списано (отрицательные суммы), показываем модулем.
-       Возмещения идут отдельной строкой в таблице и в структуру не попадают:
-       часть-целое из смеси плюсов и минусов не строится. */
-    var feeEntries = feeSigned.filter(function (e) { return e.signed < 0; })
-      .map(function (e) { return { id: e.id, label: e.label, value: -e.signed }; });
-    var creditEntries = feeSigned.filter(function (e) { return e.signed > 0; })
-      .map(function (e) { return { id: e.id, label: e.label, value: e.signed }; })
+    /* Расходы — положительные суммы. Возмещения (отрицательные) идут отдельной
+       строкой в таблице и в структуру расходов не попадают: часть-целое из
+       смеси плюсов и минусов не строится. */
+    var feeEntries = feeSigned.filter(function (e) { return e.signed > 0; })
+      .map(function (e) { return { id: e.id, label: e.label, value: e.signed }; });
+    var creditEntries = feeSigned.filter(function (e) { return e.signed < 0; })
+      .map(function (e) { return { id: e.id, label: e.label, value: -e.signed }; })
       .sort(function (a, b) { return b.value - a.value; });
 
     var feeSegments = foldTail(feeEntries, 7);

@@ -126,7 +126,7 @@
       "chart.feeMixCaption": "Доля каждого типа комиссии в общих расходах за период.",
       "chart.feesByType": "Комиссии по типам",
       "chart.feesByTypeCaption":
-        "Referral Fee приходит из API под именем Commission. Хранение и размещение появляются в те дни, когда Amazon их начисляет.",
+        "Списания показаны положительными. Возмещения вынесены в таблицу отдельными строками со знаком плюс — в структуру расходов они не входят. Хранение начисляется не каждый день.",
       "chart.topByNet": "Товары по чистому доходу",
       "chart.topByNetCaption": "Десять позиций с наибольшим чистым доходом за период.",
 
@@ -252,7 +252,7 @@
       "chart.feeMixCaption": "Each fee type's share of total costs for the period.",
       "chart.feesByType": "Fees by type",
       "chart.feesByTypeCaption":
-        "The referral fee arrives from the API as Commission. Storage and placement appear on the days Amazon charges them.",
+        "Charges are shown as positive. Credits are listed separately in the table with a plus sign and are excluded from the expense mix. Storage is not charged every day.",
       "chart.topByNet": "Products by net proceeds",
       "chart.topByNetCaption": "The ten positions with the highest net proceeds.",
 
@@ -378,7 +378,7 @@
       "chart.feeMixCaption": "Частка кожного типу комісії у загальних витратах за період.",
       "chart.feesByType": "Комісії за типами",
       "chart.feesByTypeCaption":
-        "Referral Fee надходить з API під назвою Commission. Зберігання та розміщення з'являються в ті дні, коли Amazon їх нараховує.",
+        "Списання показані додатними. Відшкодування винесені в таблицю окремими рядками зі знаком плюс — у структуру витрат вони не входять. Зберігання нараховується не щодня.",
       "chart.topByNet": "Товари за чистим доходом",
       "chart.topByNetCaption": "Десять позицій з найбільшим чистим доходом за період.",
 
