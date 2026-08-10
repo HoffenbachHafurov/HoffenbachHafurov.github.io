@@ -674,8 +674,17 @@
     row.appendChild(el("div", "stat__value", opts.value));
 
     if (opts.delta != null && isFinite(opts.delta)) {
+      /* Направление и оценка — РАЗНЫЕ вещи, и путать их нельзя.
+         Стрелка показывает, куда двинулась величина. Цвет показывает, хорошо
+         это или плохо, а это зависит от самой величины: рост выручки — хорошо,
+         рост возвратов и комиссий — плохо. Раньше цвет вешался прямо на
+         направление, и падение возвратов на 7 % красилось красным. */
       var dir = opts.delta > 0.0005 ? "up" : opts.delta < -0.0005 ? "down" : "flat";
-      var badge = el("span", "stat__delta stat__delta--" + dir);
+      var upIsGood = opts.lowerIsBetter ? false : true;
+      var tone = dir === "flat" ? "neutral"
+               : (dir === "up") === upIsGood ? "good" : "bad";
+
+      var badge = el("span", "stat__delta stat__delta--" + dir + " stat__delta--" + tone);
       /* Направление подкреплено стрелкой, а не только цветом */
       badge.appendChild(el("span", null, dir === "up" ? "▲" : dir === "down" ? "▼" : "—"));
       badge.appendChild(el("span", null, Fmt.delta(opts.delta)));
@@ -1013,12 +1022,15 @@
       delta: growth(revenue, prevRevenue),
       spark: tail(revSeries.values, 12)
     });
+    /* lowerIsBetter вместо переворота знака. Раньше дельту расходов и возвратов
+       умножали на −1, чтобы получить нужный цвет, — и вместе с цветом
+       переворачивалось само число: рост возвратов на 7,3 % показывался
+       как «▼ −7,3 %». Теперь знак настоящий, а цветом заведует оценка. */
     renderStat($("s-kpi-fees"), {
       label: T("kpi.fees"),
       value: Fmt.money(feesTotal, currency),
-      /* Рост расходов — это плохо, поэтому знак дельты переворачиваем:
-         иначе «+12%» подсветилось бы зелёным как достижение. */
-      delta: growth(feesTotal, prevFees) == null ? null : -growth(feesTotal, prevFees)
+      delta: growth(feesTotal, prevFees),
+      lowerIsBetter: true
     });
     renderStat($("s-kpi-feeshare"), {
       label: T("kpi.feeShare"),
@@ -1027,7 +1039,8 @@
     renderStat($("s-kpi-refunds"), {
       label: T("kpi.refunds"),
       value: Fmt.money(refunds, currency),
-      delta: growth(refunds, prevRefunds) == null ? null : -growth(refunds, prevRefunds)
+      delta: growth(refunds, prevRefunds),
+      lowerIsBetter: true
     });
 
     /* ---- Выручка и чистый доход: две серии, одна шкала ---- */

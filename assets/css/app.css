@@ -714,9 +714,9 @@ button {
   font-size: var(--fs-label);
   font-weight: 600;
 }
-.stat__delta--up { color: var(--delta-good); }
-.stat__delta--down { color: var(--delta-bad); }
-.stat__delta--flat { color: var(--text-muted); }
+.stat__delta--good { color: var(--delta-good); }
+.stat__delta--bad { color: var(--delta-bad); }
+.stat__delta--neutral { color: var(--text-muted); }
 
 .stat__period {
   font-size: var(--fs-micro);
@@ -1053,8 +1053,8 @@ table.data tbody tr:last-child td {
   line-height: 1.35;
   background: var(--badge-flat-bg);
 }
-.stat__delta--up { background: var(--badge-good-bg); }
-.stat__delta--down { background: var(--badge-bad-bg); }
+.stat__delta--good { background: var(--badge-good-bg); }
+.stat__delta--bad { background: var(--badge-bad-bg); }
 
 /* ---- Заголовок карточки чуть плотнее ---------------------------------- */
 .card__title {
