@@ -1,7 +1,7 @@
 /* Журнал синхронизаций. Собирается автоматически, руками не править. */
 window.DASHBOARD_RUNS = {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-10T13:19:33Z",
+  "updatedAt": "2026-08-10T18:18:17Z",
   "integrations": [
     {
       "id": "amazon-economics",
@@ -12,6 +12,49 @@ window.DASHBOARD_RUNS = {
     }
   ],
   "runs": [
+    {
+      "id": "31417113205",
+      "integration": "amazon-economics",
+      "trigger": "schedule",
+      "status": "success",
+      "startedAt": "2026-08-10T18:03:22Z",
+      "finishedAt": "2026-08-10T18:18:17Z",
+      "durationSec": 895,
+      "period": {
+        "from": "2026-01-01",
+        "to": "2026-08-09"
+      },
+      "coverage": {
+        "expectedDays": 221,
+        "coveredDays": 221,
+        "percent": 100.0,
+        "rows": 2431,
+        "feeRows": 11539,
+        "productRows": 20064
+      },
+      "steps": [
+        {
+          "name": "Выгрузка экономики из Amazon",
+          "status": "success",
+          "durationSec": 855,
+          "detail": "138 567 строк, 79 МБ"
+        },
+        {
+          "name": "Сборка данных дашборда",
+          "status": "success",
+          "durationSec": 30,
+          "detail": "5,4 МБ"
+        },
+        {
+          "name": "Шифрование файла данных",
+          "status": "success",
+          "durationSec": 2,
+          "detail": "565 КБ"
+        }
+      ],
+      "error": null,
+      "runUrl": "https://github.com/HoffenbachHafurov/amazon-sp-api-integration/actions/runs/31417113205"
+    },
     {
       "id": "31389453777",
       "integration": "amazon-economics",
