@@ -60,14 +60,16 @@
       "filter.currency": "Валюта",
       "filter.marketplace": "Маркетплейс",
       "filter.all": "Все",
+      "filter.fxOn": "Курс ЕЦБ на",
       "filter.note":
-        "Валюты не сводятся на одну шкалу — выберите одну. Штуки считаются по всем маркетплейсам сразу.",
+        "Все суммы приведены к евро по курсам ЕЦБ. Фильтр по витрине действует на все карточки ниже.",
 
       "kpi.revenue": "Выручка",
       "kpi.units": "Продано штук",
       "kpi.orders": "Заказов",
       "kpi.avgOrder": "Средний чек",
-      "kpi.skus": "Активных SKU",
+      "kpi.skus": "Активных ASIN",
+      "kpi.ordersUnavailable": "Data Kiosk не отдаёт число заказов",
       "kpi.vsPrev": "к предыдущему периоду",
 
       "chart.revenueOverTime": "Выручка по дням",
@@ -85,6 +87,7 @@
       "table.value": "Значение",
       "table.marketplace": "Маркетплейс",
       "table.sku": "SKU",
+      "table.asin": "ASIN",
       "table.product": "Товар",
       "table.units": "Штук",
       "table.revenue": "Выручка",
@@ -217,6 +220,7 @@
       "filter.currency": "Currency",
       "filter.marketplace": "Marketplace",
       "filter.all": "All",
+      "filter.fxOn": "ECB rate as of",
       "filter.note":
         "Currencies never share a scale — pick one. Unit counts cover every marketplace at once.",
 
@@ -224,7 +228,8 @@
       "kpi.units": "Units sold",
       "kpi.orders": "Orders",
       "kpi.avgOrder": "Average order",
-      "kpi.skus": "Active SKUs",
+      "kpi.skus": "Active ASINs",
+      "kpi.ordersUnavailable": "Data Kiosk does not report order counts",
       "kpi.vsPrev": "vs previous period",
 
       "chart.revenueOverTime": "Revenue by day",
@@ -242,6 +247,7 @@
       "table.value": "Value",
       "table.marketplace": "Marketplace",
       "table.sku": "SKU",
+      "table.asin": "ASIN",
       "table.product": "Product",
       "table.units": "Units",
       "table.revenue": "Revenue",
@@ -374,14 +380,16 @@
       "filter.currency": "Валюта",
       "filter.marketplace": "Маркетплейс",
       "filter.all": "Усі",
+      "filter.fxOn": "Курс ЄЦБ на",
       "filter.note":
-        "Валюти не зводяться на одну шкалу — оберіть одну. Штуки рахуються по всіх маркетплейсах одразу.",
+        "Усі суми приведені до євро за курсами ЄЦБ. Фільтр за вітриною діє на всі картки нижче.",
 
       "kpi.revenue": "Виторг",
       "kpi.units": "Продано штук",
       "kpi.orders": "Замовлень",
       "kpi.avgOrder": "Середній чек",
-      "kpi.skus": "Активних SKU",
+      "kpi.skus": "Активних ASIN",
+      "kpi.ordersUnavailable": "Data Kiosk не віддає кількість замовлень",
       "kpi.vsPrev": "до попереднього періоду",
 
       "chart.revenueOverTime": "Виторг за днями",
@@ -399,6 +407,7 @@
       "table.value": "Значення",
       "table.marketplace": "Маркетплейс",
       "table.sku": "SKU",
+      "table.asin": "ASIN",
       "table.product": "Товар",
       "table.units": "Штук",
       "table.revenue": "Виторг",

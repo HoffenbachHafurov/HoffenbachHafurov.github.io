@@ -453,9 +453,12 @@
     if (!d) return [];
     if (d.skus && d.skus.length) return d.skus;
     if (skuCache) return skuCache;
+    /* Подпись товара — ASIN: он узнаётся, ищется на Amazon и одинаков во всех
+       витринах. MSKU остаётся рядом как внутренний код продавца. */
     skuCache = ecoProducts().map(function (r) {
       return {
-        date: r.date, sku: r.msku, name: r.name || r.msku,
+        date: r.date, sku: r.asin || r.msku, msku: r.msku,
+        name: r.name || r.asin || r.msku,
         marketplace: r.marketplace, currency: r.currency,
         units: r.unitsOrdered, revenue: r.orderedSales
       };
@@ -518,7 +521,8 @@
   function matches(row, from, to) {
     if (from && row.date < from) return false;
     if (to && row.date > to) return false;
-    if (state.filters.currency && row.currency !== state.filters.currency) return false;
+    /* Фильтра по валюте больше нет: конвейер приводит все суммы к евро
+       по курсам ЕЦБ, поэтому складывать их можно без оговорок. */
     if (state.filters.marketplace !== "all" && row.marketplace !== state.filters.marketplace) {
       return false;
     }
@@ -555,6 +559,13 @@
       labels: dates,
       values: dates.map(function (d) { return map[d] || 0; })
     };
+  }
+
+  /* Валюта отображения одна на весь дашборд: конвейер сводит суммы к евро
+     по курсам ЕЦБ. Берём её из payload, а не хардкодим — если источник
+     когда-нибудь сменит базу, интерфейс поедет за ним. */
+  function displayCurrency() {
+    return (state.data && state.data.meta && state.data.meta.defaultCurrency) || "EUR";
   }
 
   function marketplaceName(id) {
@@ -603,31 +614,31 @@
       periodSel.appendChild(opt);
     });
 
-    /* Списки валют и витрин собираются из обоих источников: обзор берёт
-       данные из отчёта по заказам, анализ продаж — из Data Kiosk, и набор
+    /* Список витрин собирается из обоих источников: обзор берёт данные
+       из отчёта по заказам, анализ продаж — из Data Kiosk, и набор
        маркетплейсов у них может не совпадать. */
     var sources = rows().concat(ecoDays());
 
-    /* Валюты: складывать EUR с GBP нельзя, поэтому это переключатель,
-       а не «все сразу» */
-    var currencies = {};
-    sources.forEach(function (r) { if (r.currency) currencies[r.currency] = true; });
-    var codes = Object.keys(currencies).sort();
-    if (!state.filters.currency || codes.indexOf(state.filters.currency) === -1) {
-      var preferred = state.data && state.data.meta && state.data.meta.defaultCurrency;
-      state.filters.currency = (preferred && codes.indexOf(preferred) !== -1)
-        ? preferred
-        : codes[0] || null;
+    /* Переключателя валют больше нет. Конвейер приводит все суммы к евро
+       по курсам ЕЦБ, поэтому валюта на дашборде ровно одна. */
+    state.filters.currency = null;
+
+    /* Курс — часть данных, а не украшение: по нему пересчитана каждая сумма
+       на экране, и читатель вправе видеть, какой именно и на какую дату. */
+    var fxNote = $("fx-note");
+    var fx = state.data && state.data.meta && state.data.meta.fx;
+    if (fxNote) {
+      if (fx && fx.rates && fx.rates.length) {
+        var pairs = fx.rates
+          .filter(function (r) { return r.currency !== "EUR"; })
+          .map(function (r) { return r.currency + " " + Fmt.number(r.perEur, 4); });
+        fxNote.textContent = pairs.length
+          ? T("filter.fxOn") + " " + Fmt.date(fx.date) + ": 1 € = " + pairs.join(", ")
+          : "";
+      } else {
+        fxNote.textContent = "";
+      }
     }
-    var currencySel = $("filter-currency");
-    currencySel.textContent = "";
-    codes.forEach(function (code) {
-      var opt = el("option", null, code);
-      opt.value = code;
-      if (code === state.filters.currency) opt.selected = true;
-      currencySel.appendChild(opt);
-    });
-    currencySel.disabled = codes.length < 2;
 
     var marketSel = $("filter-marketplace");
     marketSel.textContent = "";
@@ -647,7 +658,6 @@
 
   function onFilterChange() {
     state.filters.period = $("filter-period").value;
-    state.filters.currency = $("filter-currency").value || null;
     state.filters.marketplace = $("filter-marketplace").value;
     render();
   }
@@ -673,6 +683,12 @@
       row.appendChild(el("span", "stat__period", T("kpi.vsPrev")));
     }
     node.appendChild(row);
+
+    /* Пояснение под значением: нужно, когда величина не «ноль», а «неизвестна».
+       Без него прочерк выглядит поломкой, а не честным «данных нет». */
+    if (opts.note) {
+      node.appendChild(el("div", "stat__note", opts.note));
+    }
 
     /* Метр доли — приём из карточек 21st: значение плюс полоска, показывающая
        его вес в целом. Заполняет карточку-героя смыслом, а не пустотой. */
@@ -732,18 +748,23 @@
     $("page-overview").hidden = !hasData;
     if (!hasData) return;
 
-    var currency = state.filters.currency;
+    var currency = displayCurrency();
 
     /* ---- Показатели ---- */
     var revenue = sum(current, "revenue");
     var units = sum(current, "units");
-    var orders = sum(current, "orders");
-    var avg = orders > 0 ? revenue / orders : 0;
+    /* Data Kiosk отдаёт штуки, но не число заказов — в строках там null.
+       Ноль здесь был бы враньём: он читается как «заказов не было», хотя
+       на деле величина просто неизвестна. Отличаем «нет данных» от нуля. */
+    var hasOrders = current.some(function (r) { return r.orders != null; });
+    var orders = hasOrders ? sum(current, "orders") : null;
+    var avg = (hasOrders && orders > 0) ? revenue / orders : null;
 
     var prevRevenue = sum(previous, "revenue");
     var prevUnits = sum(previous, "units");
-    var prevOrders = sum(previous, "orders");
-    var prevAvg = prevOrders > 0 ? prevRevenue / prevOrders : 0;
+    var hasPrevOrders = previous.some(function (r) { return r.orders != null; });
+    var prevOrders = hasPrevOrders ? sum(previous, "orders") : null;
+    var prevAvg = (hasPrevOrders && prevOrders > 0) ? prevRevenue / prevOrders : null;
 
     var revSeries = byDate(current, "revenue", bounds.from, bounds.to);
     var unitSeries = byDate(current, "units", bounds.from, bounds.to);
@@ -768,14 +789,18 @@
     var orderSeries = byDate(current, "orders", bounds.from, bounds.to);
     renderStat($("kpi-orders"), {
       label: T("kpi.orders"),
+      /* Fmt.number(null) сам вернёт прочерк. Спарклайн из пустой серии
+         рисовал бы прямую по нулям — тоже не показываем. */
       value: Fmt.number(orders),
-      delta: growth(orders, prevOrders),
-      spark: tail(orderSeries.values, 12)
+      delta: hasOrders ? growth(orders, prevOrders) : null,
+      spark: hasOrders ? tail(orderSeries.values, 12) : null,
+      note: hasOrders ? null : T("kpi.ordersUnavailable")
     });
     renderStat($("kpi-avg"), {
       label: T("kpi.avgOrder"),
       value: Fmt.money(avg, currency, 2),
-      delta: growth(avg, prevAvg)
+      delta: (hasOrders && hasPrevOrders) ? growth(avg, prevAvg) : null,
+      note: hasOrders ? null : T("kpi.ordersUnavailable")
     });
 
     var activeSkus = {};
@@ -895,7 +920,7 @@
     global.Charts.table($("table-skus"), {
       caption: T("chart.topSkus"),
       columns: [
-        { label: T("table.sku") },
+        { label: T("table.asin") },
         { label: T("table.product") },
         { label: T("table.units"), numeric: true },
         { label: T("table.revenue"), numeric: true }
@@ -950,7 +975,7 @@
     if (!hasData) return;
 
     var bounds = periodBounds(days);
-    var currency = state.filters.currency;
+    var currency = displayCurrency();
 
     var current = days.filter(function (r) { return matches(r, bounds.from, bounds.to); });
     var previous = bounds.prevFrom
@@ -1132,7 +1157,9 @@
     var prodMap = {};
     ecoProducts().forEach(function (r) {
       if (!matches(r, bounds.from, bounds.to)) return;
-      var key = r.msku || r.asin || "—";
+      /* Ключ — ASIN. Раньше первым шёл MSKU, и один и тот же товар с разными
+         внутренними кодами дробился на несколько строк в топе. */
+      var key = r.asin || r.msku || "—";
       if (!prodMap[key]) {
         prodMap[key] = { key: key, name: r.name || key, net: 0, sales: 0, units: 0 };
       }
@@ -1154,7 +1181,7 @@
     global.Charts.table($("table-s-products"), {
       caption: T("chart.topByNet"),
       columns: [
-        { label: T("table.sku") },
+        { label: T("table.asin") },
         { label: T("kpi.revenue"), numeric: true },
         { label: T("table.units"), numeric: true },
         { label: T("table.netProceeds"), numeric: true }

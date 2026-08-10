@@ -1399,3 +1399,10 @@ table.data tbody tr:last-child td {
 @media (prefers-color-scheme: light) {
   :root:where(:not([data-theme="dark"])) .link { color: var(--seq-500); }
 }
+
+/* Пояснение под значением плитки: почему стоит прочерк, а не число */
+.stat__note {
+  margin-top: var(--sp-1);
+  font-size: var(--fs-micro);
+  color: var(--text-muted);
+}
