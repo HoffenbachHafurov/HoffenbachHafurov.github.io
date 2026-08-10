@@ -1230,8 +1230,13 @@
 
     $("login-form").addEventListener("submit", handleLogin);
     $("sign-out").addEventListener("click", signOut);
-    ["filter-period", "filter-currency", "filter-marketplace"].forEach(function (id) {
-      $(id).addEventListener("change", onFilterChange);
+    /* Переключателя валют в разметке больше нет — все суммы в евро.
+       Проверка на null здесь не «на всякий случай»: когда его убрали,
+       $(id) вернул null, forEach упал на второй итерации, и фильтр витрин
+       остался без обработчика. Внешне это выглядело как «цифры не меняются». */
+    ["filter-period", "filter-marketplace"].forEach(function (id) {
+      var node = $(id);
+      if (node) { node.addEventListener("change", onFilterChange); }
     });
     wireTableToggles();
 
