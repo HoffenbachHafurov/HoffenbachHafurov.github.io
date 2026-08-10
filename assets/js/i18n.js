@@ -114,6 +114,7 @@
         "Этот раздел ещё не наполнен. Каркас готов — содержимое добавим следующим шагом.",
 
       "kpi.netProceeds": "Чистый доход",
+      "kpi.margin": "Маржа",
       "kpi.fees": "Комиссии Amazon",
       "kpi.feeShare": "Доля комиссий",
       "kpi.refunds": "Возвраты",
@@ -240,6 +241,7 @@
         "This section is not filled in yet. The frame is ready — content comes next.",
 
       "kpi.netProceeds": "Net proceeds",
+      "kpi.margin": "Margin",
       "kpi.fees": "Amazon fees",
       "kpi.feeShare": "Fee share",
       "kpi.refunds": "Refunds",
@@ -366,6 +368,7 @@
         "Цей розділ ще не наповнено. Каркас готовий — вміст додамо наступним кроком.",
 
       "kpi.netProceeds": "Чистий дохід",
+      "kpi.margin": "Маржа",
       "kpi.fees": "Комісії Amazon",
       "kpi.feeShare": "Частка комісій",
       "kpi.refunds": "Повернення",

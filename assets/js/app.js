@@ -620,6 +620,25 @@
     }
     node.appendChild(row);
 
+    /* Метр доли — приём из карточек 21st: значение плюс полоска, показывающая
+       его вес в целом. Заполняет карточку-героя смыслом, а не пустотой. */
+    if (opts.meter && isFinite(opts.meter.value)) {
+      var share = Math.max(0, Math.min(1, opts.meter.value));
+      var meter = el("div", "stat__meter");
+      var head = el("div", "stat__meter-head");
+      head.appendChild(el("span", "stat__meter-label", opts.meter.label));
+      head.appendChild(el("span", "stat__meter-value", Fmt.percent(share)));
+      meter.appendChild(head);
+      var track = el("div", "stat__meter-track");
+      track.setAttribute("role", "img");
+      track.setAttribute("aria-label", opts.meter.label + ": " + Fmt.percent(share));
+      var fill = el("div", "stat__meter-fill");
+      fill.style.width = (share * 100).toFixed(1) + "%";
+      track.appendChild(fill);
+      meter.appendChild(track);
+      node.appendChild(meter);
+    }
+
     if (opts.spark && opts.spark.length > 1) {
       var holder = el("div", "stat__spark");
       node.appendChild(holder);
@@ -627,7 +646,7 @@
         points: opts.spark,
         color: "var(--series-other)",
         accent: "var(--series-1)",
-        height: opts.hero ? 44 : 30
+        height: opts.hero ? 72 : 30
       });
     }
   }
@@ -906,6 +925,7 @@
       value: Fmt.money(net, currency),
       delta: growth(net, prevNet),
       spark: tail(netSeries.values, 14),
+      meter: revenue > 0 ? { value: net / revenue, label: T("kpi.margin") } : null,
       hero: true
     });
     renderStat($("s-kpi-revenue"), {

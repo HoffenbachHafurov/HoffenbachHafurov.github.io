@@ -191,3 +191,69 @@
     --dur-base: 0ms;
   }
 }
+
+/* ============================================================================
+   Слой 21st.dev — форма и хром интерфейса
+   ----------------------------------------------------------------------------
+   Добавлено 10 августа 2026 по решению D-009 (memory/04-decisions.md).
+   Взято с 21st.dev: словарь токенов shadcn (пары surface/foreground, отдельное
+   семейство --sidebar-*, --radius как единая шкала) и более крупные радиусы
+   (там rounded-2xl/3xl = 16/24px против наших 10/14).
+
+   🔴 Палитра графиков (--series-*, --seq-*, --status-*) НЕ ТРОГАЕТСЯ.
+   Темы 21st несут свои --chart-1..5, но они не проходили проверку на
+   различимость при дальтонизме. Цвет серии и цвет интерфейса — разные каналы,
+   смешивать их нельзя. Здесь только хром: поверхности, радиусы, бейджи.
+   ========================================================================= */
+
+:root {
+  /* Радиусы: крупнее и мягче */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+
+  /* Боковая панель — своё семейство, как в темах 21st */
+  --sidebar-bg: #fbfbf9;
+  --sidebar-border: rgba(11, 11, 11, 0.08);
+  --sidebar-active-bg: #eaf2fd;
+  --sidebar-active-fg: #1c5cab;
+
+  /* Бейджи дельты: заливка вместо голого цветного текста */
+  --badge-good-bg: #e4f1e4;
+  --badge-bad-bg: #fbeaea;
+  --badge-flat-bg: #f0efec;
+
+  /* Трек метра и подсветка карточки под курсором */
+  --meter-track: #ebeae5;
+  --card-hover-border: rgba(11, 11, 11, 0.16);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    --sidebar-bg: #161615;
+    --sidebar-border: rgba(255, 255, 255, 0.08);
+    --sidebar-active-bg: rgba(57, 135, 229, 0.18);
+    --sidebar-active-fg: #86b6ef;
+
+    --badge-good-bg: rgba(12, 163, 12, 0.18);
+    --badge-bad-bg: rgba(208, 59, 59, 0.2);
+    --badge-flat-bg: rgba(255, 255, 255, 0.07);
+
+    --meter-track: #2c2c2a;
+    --card-hover-border: rgba(255, 255, 255, 0.18);
+  }
+}
+
+:root[data-theme="dark"] {
+  --sidebar-bg: #161615;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-active-bg: rgba(57, 135, 229, 0.18);
+  --sidebar-active-fg: #86b6ef;
+
+  --badge-good-bg: rgba(12, 163, 12, 0.18);
+  --badge-bad-bg: rgba(208, 59, 59, 0.2);
+  --badge-flat-bg: rgba(255, 255, 255, 0.07);
+
+  --meter-track: #2c2c2a;
+  --card-hover-border: rgba(255, 255, 255, 0.18);
+}

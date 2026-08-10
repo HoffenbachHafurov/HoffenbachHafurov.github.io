@@ -1010,3 +1010,116 @@ table.data tbody tr:last-child td {
     box-shadow: none;
   }
 }
+
+/* ============================================================================
+   Слой 21st.dev — хром интерфейса
+   ----------------------------------------------------------------------------
+   Добавлено 10 августа 2026, решение D-009. Правила идут последними и
+   переопределяют базовые: так исходные блоки с их комментариями остаются
+   нетронутыми и видно, что именно изменилось.
+
+   Что взято с 21st.dev:
+     * крупные радиусы и более щедрые поля карточек (там p-6/p-8 против нашего p-4);
+     * микро-подпись капсом с разрядкой над значением;
+     * дельта как бейдж с заливкой, а не цветной текст;
+     * отдельная поверхность боковой панели и заметное активное состояние;
+     * реакция карточки на курсор.
+   ========================================================================= */
+
+/* ---- Карточки: больше воздуха, мягче форма ---------------------------- */
+.card {
+  padding: var(--sp-5);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
+}
+.card:hover {
+  border-color: var(--card-hover-border);
+}
+
+/* ---- Микро-подпись: капс с разрядкой, как в карточках 21st ------------ */
+.stat__label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ---- Дельта как бейдж -------------------------------------------------- */
+.stat__delta {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: var(--fs-micro);
+  line-height: 1.35;
+  background: var(--badge-flat-bg);
+}
+.stat__delta--up { background: var(--badge-good-bg); }
+.stat__delta--down { background: var(--badge-bad-bg); }
+
+/* ---- Заголовок карточки чуть плотнее ---------------------------------- */
+.card__title {
+  letter-spacing: -0.015em;
+}
+
+/* ---- Боковая панель: своя поверхность, читаемое активное состояние ----- */
+.sidebar {
+  background: var(--sidebar-bg);
+  border-inline-end: 1px solid var(--sidebar-border);
+  padding: var(--sp-4);
+}
+.navgroup__label {
+  letter-spacing: 0.1em;
+}
+.navlink {
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+.navlink[aria-current="page"] {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-fg);
+  font-weight: 600;
+}
+
+/* ---- Метр доли внутри плитки ------------------------------------------ */
+.stat__meter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+.stat__meter-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.stat__meter-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.stat__meter-value {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.stat__meter-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--meter-track);
+  overflow: hidden;
+}
+/* Заливка — тот же тон, что и трек, но насыщенный: состояние читается
+   по всей полосе, а не только по её концу (методичка dataviz, «Meter»). */
+.stat__meter-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--series-1);
+}
+
+/* Карточка-герой: спарклайн прижат к низу, метр — над ним */
+.stat--hero .stat__meter {
+  margin-top: auto;
+}
