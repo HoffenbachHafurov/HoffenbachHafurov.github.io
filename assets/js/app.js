@@ -369,6 +369,60 @@
     navigate(pageFromHash());
   }
 
+  /* ======================================================================
+     Колокольчик синхронизаций
+     ----------------------------------------------------------------------
+     Журнал (data/runs.js) не зашифрован и грузится независимо от входа,
+     поэтому колокольчик работает и тогда, когда выгрузка сломалась.
+     ===================================================================== */
+
+  function refreshSyncBell() {
+    var bell = $("sync-bell");
+    if (!bell || !global.Runs) return;
+
+    var s = global.Runs.summary();
+    var dot = $("sync-dot");
+
+    /* Точка — только про беду: последний прогон упал или данные протухли.
+       Значок «всё хорошо» на колокольчике был бы шумом. */
+    if (dot) dot.hidden = !s.alert;
+    bell.classList.toggle("bell--alert", !!s.alert);
+
+    var label = T("sync.title");
+    if (s.last) label += ": " + global.Runs.statusText(s.last.status) + ", " + global.Runs.when(s.last.startedAt);
+    bell.setAttribute("aria-label", label);
+    bell.setAttribute("title", label);
+
+    var sched = $("sync-schedule");
+    if (sched) {
+      var integ = global.Runs.integration();
+      sched.textContent = (integ ? integ.name + " · " : "") + T("sync.every5h");
+    }
+  }
+
+  function wireSyncBell() {
+    var bell = $("sync-bell");
+    var modal = $("sync-modal");
+    if (!bell || !modal) return;
+
+    refreshSyncBell();
+
+    bell.addEventListener("click", function () {
+      global.Runs.renderList($("sync-list"), 6);
+      refreshSyncBell();
+      /* showModal даёт фокус-ловушку, Esc и подложку без своего кода */
+      if (typeof modal.showModal === "function") { modal.showModal(); }
+      else { modal.setAttribute("open", ""); }
+    });
+
+    $("sync-close").addEventListener("click", function () { modal.close(); });
+
+    /* Клик по подложке за пределами карточки закрывает окно */
+    modal.addEventListener("click", function (e) {
+      if (e.target === modal) modal.close();
+    });
+  }
+
   function signOut() {
     /* Данные выбрасываем из памяти. Перезайти можно только с паролем. */
     state.data = null;
@@ -1157,6 +1211,8 @@
     $("menu-toggle").addEventListener("click", function () {
       if ($("sidebar").classList.contains("is-open")) { closeSidebar(); } else { openSidebar(); }
     });
+
+    wireSyncBell();
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") closeSidebar();
     });

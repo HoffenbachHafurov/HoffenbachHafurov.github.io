@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en" data-theme-pref="system">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex, nofollow">
+<title>Журнал синхронизаций</title>
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Cpath d='M8 21V13M14 21V9M20 21V16M26 21V11' stroke='white' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
+
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/app.css">
+
+<script>
+/* Тема и язык применяются ДО первой отрисовки — иначе мигает светлый фон.
+   Блок скопирован из index.html намеренно: страница обязана работать
+   самостоятельно, без единого общего скрипта. */
+(function () {
+  try {
+    var pref = localStorage.getItem("dashboard.theme") || "system";
+    document.documentElement.setAttribute("data-theme-pref", pref);
+    if (pref === "light" || pref === "dark") {
+      document.documentElement.setAttribute("data-theme", pref);
+    }
+  } catch (e) {}
+  try {
+    var langs = ["ru", "en", "uk"];
+    var saved = localStorage.getItem("dashboard.lang");
+    var pick = saved && langs.indexOf(saved) >= 0 ? saved : null;
+    if (!pick) {
+      var list = navigator.languages && navigator.languages.length
+        ? navigator.languages : [navigator.language || "en"];
+      for (var i = 0; i < list.length && !pick; i++) {
+        var code = String(list[i]).slice(0, 2).toLowerCase();
+        if (langs.indexOf(code) >= 0) pick = code;
+      }
+    }
+    document.documentElement.setAttribute("lang", pick || "en");
+  } catch (e) {}
+})();
+</script>
+</head>
+
+<body>
+
+<div class="logpage">
+
+  <header class="logpage__head">
+    <div>
+      <h1 class="logpage__title" data-i18n="logs.title">Журнал синхронизаций</h1>
+      <p class="logpage__subtitle" data-i18n="logs.subtitle"></p>
+    </div>
+    <div class="topbar__tools">
+      <a class="btn btn--ghost" href="index.html" data-i18n="logs.back">К дашборду</a>
+      <div class="segmented" role="group" id="page-lang"></div>
+      <div class="segmented" role="group" id="page-theme"></div>
+    </div>
+  </header>
+
+  <div id="stale-warn" class="logpage__warn" hidden>
+    <span id="stale-badge"></span>
+    <span data-i18n="logs.stale"></span>
+  </div>
+
+  <section class="logpage__stats" id="log-stats"></section>
+
+  <div class="filters" style="margin-bottom:var(--sp-5)">
+    <div class="filters__group">
+      <label class="field__label" for="log-filter" data-i18n="logs.filter">Показывать</label>
+      <select class="select" id="log-filter">
+        <option value="all" data-i18n="logs.all">Все</option>
+        <option value="problems" data-i18n="logs.onlyProblems">Только проблемные</option>
+      </select>
+    </div>
+  </div>
+
+  <section id="log-list"></section>
+
+</div>
+
+<!-- Порядок важен: i18n и Fmt нужны runs.js -->
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/format.js"></script>
+<script src="assets/js/runs.js"></script>
+<!-- Журнал НЕ шифруется: причину сбоя нужно видеть и тогда, когда войти
+     в дашборд нельзя. Денег и SKU внутри нет. -->
+<script src="data/runs.js" onerror="window.__RUNS_MISSING__=true"></script>
+
+<script>
+(function (global) {
+  "use strict";
+
+  var T = function (k) { return global.I18N.t(k); };
+  function $(id) { return document.getElementById(id); }
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  /* ---- переключатели языка и темы: те же, что в дашборде ---------------- */
+
+  function buildSegmented(container, items, isActive, onPick) {
+    if (!container) return;
+    container.textContent = "";
+    items.forEach(function (it) {
+      var b = el("button", "segmented__item", it.label);
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(isActive(it.id)));
+      b.addEventListener("click", function () { onPick(it.id); });
+      container.appendChild(b);
+    });
+  }
+
+  function currentThemePref() {
+    return document.documentElement.getAttribute("data-theme-pref") || "system";
+  }
+
+  function setTheme(pref) {
+    document.documentElement.setAttribute("data-theme-pref", pref);
+    if (pref === "system") { document.documentElement.removeAttribute("data-theme"); }
+    else { document.documentElement.setAttribute("data-theme", pref); }
+    try { global.localStorage.setItem("dashboard.theme", pref); } catch (e) {}
+    buildControls();
+  }
+
+  function buildControls() {
+    buildSegmented($("page-lang"),
+      global.I18N.LANGS.map(function (l) { return { id: l, label: global.I18N.NATIVE_NAMES[l] }; }),
+      function (id) { return id === global.I18N.getLang(); },
+      function (id) { global.I18N.setLang(id); render(); });
+
+    buildSegmented($("page-theme"),
+      [{ id: "light", label: T("nav.themeLight") },
+       { id: "dark", label: T("nav.themeDark") },
+       { id: "system", label: T("nav.themeSystem") }],
+      function (id) { return id === currentThemePref(); },
+      setTheme);
+  }
+
+  function applyI18n() {
+    document.title = T("logs.title");
+    document.querySelectorAll("[data-i18n]").forEach(function (n) {
+      n.textContent = T(n.getAttribute("data-i18n"));
+    });
+  }
+
+  /* ---- сводка сверху ----------------------------------------------------- */
+
+  function renderStats() {
+    var box = $("log-stats");
+    box.textContent = "";
+
+    var s = global.Runs.summary();
+    var integ = global.Runs.integration();
+
+    var cells = [
+      [T("logs.lastSuccess"),
+       s.lastSuccess ? global.Runs.when(s.lastSuccess.finishedAt) : "—"],
+      [T("logs.totalRuns"), String(s.total)],
+      [T("logs.integration"), integ ? integ.name : "—"]
+    ];
+
+    cells.forEach(function (pair) {
+      var c = el("div", "logstat");
+      c.appendChild(el("div", "logstat__label", pair[0]));
+      c.appendChild(el("div", "logstat__value", pair[1]));
+      box.appendChild(c);
+    });
+
+    var warn = $("stale-warn");
+    warn.hidden = !s.stale;
+    if (s.stale) {
+      var slot = $("stale-badge");
+      slot.textContent = "";
+      slot.appendChild(global.Runs.badge("failed"));
+    }
+  }
+
+  /* ---- список ------------------------------------------------------------ */
+
+  function render() {
+    applyI18n();
+    buildControls();
+
+    if (global.__RUNS_MISSING__ || !global.Runs.data()) {
+      $("log-list").textContent = "";
+      $("log-list").appendChild(el("p", "runs__empty", T("logs.noFile")));
+      $("log-stats").textContent = "";
+      return;
+    }
+
+    renderStats();
+
+    var mode = $("log-filter").value;
+    var runs = global.Runs.list();
+    if (mode === "problems") {
+      runs = runs.filter(function (r) { return r.status !== "success"; });
+    }
+    global.Runs.renderFull($("log-list"), runs);
+  }
+
+  $("log-filter").addEventListener("change", render);
+  render();
+})(window);
+</script>
+
+</body>
+</html>
