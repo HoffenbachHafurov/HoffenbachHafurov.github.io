@@ -1406,3 +1406,144 @@ table.data tbody tr:last-child td {
   font-size: var(--fs-micro);
   color: var(--text-muted);
 }
+
+/* ============================================================================
+   База знаний (раздел «Вики»)
+   Дописано отдельной секцией в конец, как и слой 21st: видно, что пришло
+   с этой задачей, и откат сводится к удалению хвоста файла.
+   ========================================================================== */
+
+.wiki {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: var(--sp-5);
+  align-items: start;
+}
+
+/* Оглавление липнет к верху: страницы длинные, и терять навигацию при
+   прокрутке неудобно. */
+.wiki__nav {
+  position: sticky;
+  top: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wiki-navlink {
+  text-align: left;
+  padding: var(--sp-2) var(--sp-3);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--fs-body);
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+
+.wiki-navlink:hover { background: var(--surface-sunken); color: var(--text-primary); }
+.wiki-navlink:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+.wiki-navlink[aria-current="true"] { background: var(--surface-sunken); color: var(--text-primary); font-weight: 600; }
+
+.wiki__body { padding: var(--sp-6); max-width: 78ch; }
+.wiki__body:focus { outline: none; }
+
+/* --- типографика статьи --- */
+
+.wiki-h { color: var(--text-primary); line-height: 1.25; }
+.wiki-h--1 { font-size: var(--fs-title); margin: 0 0 var(--sp-4); }
+.wiki-h--2 { font-size: var(--fs-value); margin: var(--sp-6) 0 var(--sp-3); }
+.wiki-h--3 { font-size: var(--fs-body); margin: var(--sp-5) 0 var(--sp-2); font-weight: 600; }
+.wiki-h--4, .wiki-h--5, .wiki-h--6 { font-size: var(--fs-body); margin: var(--sp-4) 0 var(--sp-2); font-weight: 600; }
+
+.wiki-p { margin: 0 0 var(--sp-3); color: var(--text-secondary); line-height: 1.65; }
+.wiki-list { margin: 0 0 var(--sp-3) var(--sp-4); padding: 0; color: var(--text-secondary); line-height: 1.65; }
+.wiki-list li { margin-bottom: var(--sp-1); }
+.wiki-hr { border: 0; border-top: 1px solid var(--border-hairline); margin: var(--sp-6) 0; }
+
+.wiki__body strong { color: var(--text-primary); font-weight: 600; }
+
+.wiki__body code {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.9em;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+}
+
+.wiki-pre {
+  margin: 0 0 var(--sp-4);
+  padding: var(--sp-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  overflow-x: auto;
+}
+.wiki-pre code { background: none; padding: 0; }
+
+/* Выноска: важное предупреждение по краю текста, а не внутри абзаца */
+.wiki-quote {
+  margin: 0 0 var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border-left: 3px solid var(--div-neutral);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Таблицы шире колонки текста — прокручиваются внутри себя, а не тянут страницу */
+.wiki-tablewrap { overflow-x: auto; margin: 0 0 var(--sp-4); }
+.wiki-table { width: 100%; border-collapse: collapse; font-size: var(--fs-body); }
+.wiki-table th,
+.wiki-table td {
+  text-align: left;
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--border-hairline);
+  vertical-align: top;
+}
+.wiki-table th {
+  color: var(--text-muted);
+  font-size: var(--fs-label);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.wiki-table td { color: var(--text-secondary); }
+
+/* --- скриншоты --- */
+
+.wiki-figure { margin: 0 0 var(--sp-5); }
+.wiki-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-hairline);
+}
+.wiki-figcaption {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-micro);
+  color: var(--text-muted);
+}
+.wiki-img--missing {
+  display: inline-block;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+}
+
+.wiki-link { color: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+
+/* На узком экране оглавление уезжает наверх и перестаёт липнуть */
+@media (max-width: 860px) {
+  .wiki { grid-template-columns: 1fr; }
+  .wiki__nav { position: static; flex-direction: row; flex-wrap: wrap; }
+  .wiki__body { padding: var(--sp-4); }
+}

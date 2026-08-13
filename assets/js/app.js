@@ -132,6 +132,7 @@
     layers: "M12 3l9 5-9 5-9-5zM3 13l9 5 9-5",
     cart: "M4 5h2l2.2 9.5a2 2 0 002 1.5h6.6a2 2 0 002-1.6L21 8H7|M9 20h.01M17 20h.01",
     back: "M4 12a8 8 0 108-8|M4 12l3-3M4 12l3 3",
+    book: "M4 5.5A2.5 2.5 0 016.5 3H19v15H6.5A2.5 2.5 0 004 20.5zM19 18v3H6.5",
     gear: "M12 15a3 3 0 100-6 3 3 0 000 6z|M19 12a7 7 0 00-.1-1.2l2-1.5-2-3.5-2.3 1a7 7 0 00-2-1.2L14.2 3H9.8l-.4 2.6a7 7 0 00-2 1.2l-2.3-1-2 3.5 2 1.5A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.5 2.3-1a7 7 0 002 1.2l.4 2.6h4.4l.4-2.6a7 7 0 002-1.2l2.3 1 2-3.5-2-1.5c.1-.4.1-.8.1-1.2z"
   };
 
@@ -181,6 +182,7 @@
     {
       group: "nav.system",
       items: [
+        { id: "wiki", label: "page.wiki", icon: "book", ready: true },
         { id: "settings", label: "page.settings", icon: "gear", ready: false }
       ]
     }
@@ -228,7 +230,7 @@
     });
   }
 
-  var PAGE_NODES = ["page-sales", "page-overview", "page-placeholder"];
+  var PAGE_NODES = ["page-sales", "page-overview", "page-wiki", "page-placeholder"];
 
   function navigate(pageId) {
     var item = findNavItem(pageId);
@@ -244,7 +246,8 @@
 
     /* Фильтры относятся только к разделам с данными. На заглушке они
        вводили бы в заблуждение — там нечего фильтровать. */
-    var dataPage = item.ready && state.data;
+    /* На вики фильтры не нужны: период и витрина к тексту не применяются. */
+    var dataPage = item.ready && state.data && pageId !== "wiki";
     $("filters").hidden = !dataPage;
 
     if (!item.ready) {
@@ -739,10 +742,70 @@
      Отрисовка
      ===================================================================== */
 
+  /* ======================================================================
+     База знаний
+     Содержимое приезжает внутри шифрованного payload (узел wiki): репозиторий
+     дашборда публичный, а в документации скриншоты с реальной выручкой.
+     ===================================================================== */
+  var wikiState = { page: null };
+
+  function renderWiki() {
+    var w = state.data && state.data.wiki;
+    var nav = $("wiki-nav");
+    var body = $("wiki-body");
+
+    $("empty-state").hidden = true;
+    $("page-wiki").hidden = false;
+
+    if (!w || !w.pages || !w.pages.length) {
+      nav.textContent = "";
+      body.innerHTML = '<p class="wiki-p">' + T("wiki.empty") + '</p>';
+      return;
+    }
+
+    function known(id) {
+      return w.pages.some(function (p) { return p.id === id; });
+    }
+    if (!wikiState.page || !known(wikiState.page)) { wikiState.page = w.pages[0].id; }
+
+    function openPage(id) {
+      if (!known(id)) { return; }
+      wikiState.page = id;
+      renderWiki();
+      body.scrollTop = 0;
+      try { body.focus({ preventScroll: true }); } catch (e) { }
+    }
+
+    nav.textContent = "";
+    w.pages.forEach(function (p) {
+      var link = el("button", "wiki-navlink");
+      link.type = "button";
+      link.textContent = p.title;
+      if (p.id === wikiState.page) { link.setAttribute("aria-current", "true"); }
+      link.addEventListener("click", function () { openPage(p.id); });
+      nav.appendChild(link);
+    });
+
+    var page = w.pages.filter(function (p) { return p.id === wikiState.page; })[0];
+    body.setAttribute("tabindex", "-1");
+    body.innerHTML = Markdown.render(page.markdown, w.images);
+
+    /* Ссылки вида [текст](другая-страница.md) ведут в соседний раздел вики:
+       .md-файлов на сайте нет, обычный href привёл бы в никуда. */
+    var links = body.querySelectorAll("[data-wiki-page]");
+    Array.prototype.forEach.call(links, function (a) {
+      a.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        openPage(a.getAttribute("data-wiki-page"));
+      });
+    });
+  }
+
   /* Диспетчер: рисуем только активный раздел. Перерисовывать скрытые
      страницы бессмысленно — их ширина равна нулю, и графики построились бы
      по неверным размерам. */
   function render() {
+    if (state.page === "wiki") { renderWiki(); return; }
     if (state.page === "sales") { renderSales(); return; }
     renderOverview();
   }

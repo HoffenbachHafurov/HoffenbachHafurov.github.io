@@ -390,6 +390,15 @@
         </section>
       </div>
 
+      <!-- База знаний. Содержимое приезжает внутри шифрованного payload:
+           репозиторий публичный, а в документации скриншоты с выручкой. -->
+      <div id="page-wiki" class="page" hidden>
+        <div class="wiki">
+          <nav class="wiki__nav" id="wiki-nav" data-i18n-attr="aria-label:page.wiki"></nav>
+          <article class="wiki__body card" id="wiki-body"></article>
+        </div>
+      </div>
+
     </main>
 
     <footer class="footer">
@@ -426,6 +435,7 @@
 <script src="assets/js/vault.js"></script>
 <script src="assets/js/charts.js"></script>
 <script src="assets/js/runs.js"></script>
+<script src="assets/js/markdown.js"></script>
 <!-- Зашифрованные данные. Отдельным файлом, чтобы обновлять их не трогая код.
      Загружается как обычный скрипт, а не через fetch — тогда страница
      одинаково работает и на GitHub Pages, и открытая с диска. -->

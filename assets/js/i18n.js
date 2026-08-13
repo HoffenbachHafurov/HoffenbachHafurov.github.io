@@ -111,6 +111,8 @@
       "page.inventory": "Запасы",
       "page.orders": "Заказы",
       "page.returns": "Возвраты",
+      "page.wiki": "База знаний",
+      "wiki.empty": "Документация не найдена в данных. Обновите выгрузку.",
       "page.settings": "Настройки",
       "page.soon": "скоро",
       "page.soonText":
@@ -271,6 +273,8 @@
       "page.inventory": "Inventory",
       "page.orders": "Orders",
       "page.returns": "Returns",
+      "page.wiki": "Knowledge base",
+      "wiki.empty": "No documentation in this dataset. Refresh the export.",
       "page.settings": "Settings",
       "page.soon": "soon",
       "page.soonText":
@@ -431,6 +435,8 @@
       "page.inventory": "Запаси",
       "page.orders": "Замовлення",
       "page.returns": "Повернення",
+      "page.wiki": "База знань",
+      "wiki.empty": "Документацію не знайдено в даних. Оновіть вивантаження.",
       "page.settings": "Налаштування",
       "page.soon": "скоро",
       "page.soonText":
