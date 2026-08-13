@@ -824,46 +824,22 @@
   /* ======================================================================
      Раздел «1» — период против предыдущего
      ----------------------------------------------------------------------
-     Источник один: узел economics. Выручка, комиссии, реклама и netProceeds
-     посчитаны из одной выгрузки и потому сходятся тождеством
-     netProceeds = netSales − fees − ads. Себестоимость приходит полем cogs
-     в тех же дневных строках (конвейер берёт её из выгрузки Sellerboard),
-     поэтому прибыль здесь не требует Orders Report.
+     Источник — узел margin: там уже собраны выручка, комиссии, реклама,
+     себестоимость и подписка, причём валюты приведены по историческим
+     курсам на дату операции. Прибыль считает marginCalc — ЕДИНСТВЕННОЕ
+     место с этой формулой; складывать поля здесь заново нельзя, иначе
+     две копии разъедутся.
 
-     Границы берёт общий фильтр периода: при выбранных «30 днях» это ровно
-     последние 30 суток против предыдущих 30.
+     Возвраты и разбивка комиссий по типам в узле margin отсутствуют,
+     поэтому берутся из economics — это единственный их источник.
+
+     Границы задаёт общий фильтр периода: при выбранных «30 днях» это
+     ровно последние 30 суток против предыдущих 30.
      ===================================================================== */
 
-  function p30Totals(from, to) {
-    var t = {
-      revenue: 0, net: 0, refunded: 0, units: 0, unitsRef: 0,
-      fees: 0, ads: 0, proceeds: 0, cogs: 0, cogsKnown: false
-    };
-    ecoDays().forEach(function (r) {
-      if (!matches(r, from, to)) return;
-      t.revenue += Number(r.orderedSales) || 0;
-      t.net += Number(r.netSales) || 0;
-      t.refunded += Number(r.refundedSales) || 0;
-      t.units += Number(r.unitsOrdered) || 0;
-      t.unitsRef += Number(r.unitsRefunded) || 0;
-      t.fees += Number(r.fees) || 0;
-      t.ads += Number(r.ads) || 0;
-      t.proceeds += Number(r.netProceeds) || 0;
-      if (r.cogs != null) { t.cogs += Number(r.cogs) || 0; t.cogsKnown = true; }
-    });
-    return t;
-  }
-
-  /* Прибыль = netProceeds − себестоимость. Без cogs прибыль неизвестна,
-     и это НЕ ноль: ноль читался бы как «товар достался бесплатно». */
-  function p30Profit(t) {
-    if (!t.cogsKnown) return { profit: null, marginPct: null };
-    var profit = t.proceeds - t.cogs;
-    return { profit: profit, marginPct: t.revenue > 0 ? profit / t.revenue : null };
-  }
-
-  /* Комиссии по типам за период. «Advertising» из feeDays исключается:
-     это отдельная статья, она уже посчитана полем ads. */
+  /* Комиссии по типам. «Advertising» исключается: в feeDays он лежит
+     рядом с комиссиями, но расходом Amazon за продажу не является и
+     уже посчитан отдельным полем ads. */
   function p30Fees(from, to) {
     var map = {};
     ecoFees().forEach(function (r) {
@@ -874,51 +850,58 @@
     return map;
   }
 
-  /* Сутки, где комиссии есть, а продаж нет, — это дыра в выгрузке, а не
-     выходной: расход без выручки занижает прибыль периода. Так вёл себя
-     2026-08-11 в analytics_economics. Молча пропускать такое нельзя. */
+  /* Сутки, где комиссии есть, а продаж нет, — это незаполненный день
+     выгрузки, а не выходной: расход без выручки занижает прибыль периода.
+     Так вёл себя 2026-08-11, пока Data Kiosk не дозаполнил его через
+     несколько часов. Молча пропускать такое нельзя. */
   function p30Gaps(from, to) {
     var byDate = {};
     ecoDays().forEach(function (r) {
       if (!matches(r, from, to)) return;
-      var d = byDate[r.date] || (byDate[r.date] = { units: 0, revenue: 0, cost: 0 });
+      var d = byDate[r.date] || (byDate[r.date] = { units: 0, cost: 0 });
       d.units += Number(r.unitsOrdered) || 0;
-      d.revenue += Number(r.orderedSales) || 0;
       d.cost += Math.abs(Number(r.fees) || 0) + Math.abs(Number(r.ads) || 0);
     });
-    var out = [];
-    Object.keys(byDate).sort().forEach(function (d) {
-      var v = byDate[d];
-      if (v.units === 0 && v.revenue === 0 && v.cost > 0) out.push(d);
+    return Object.keys(byDate).sort().filter(function (d) {
+      return byDate[d].units === 0 && byDate[d].cost > 0;
     });
-    return out;
   }
 
   function renderP30() {
-    var bounds = periodBounds(ecoDays());
-    var hasEco = ecoDays().length > 0;
+    var mg = marginData();
+    var days = marginDays();
+    var hasData = !!(mg && days.length);
 
     $("empty-state").hidden = true;
-    $("p30-empty").hidden = hasEco;
-    $("p30-content").hidden = !hasEco;
-    if (!hasEco) return;
+    $("page-p30").hidden = false;
+    $("p30-empty").hidden = hasData;
+    $("p30-content").hidden = !hasData;
+    if (!hasData) return;
 
-    var currency = displayCurrency();
-    var cur = p30Totals(bounds.from, bounds.to);
-    var prev = bounds.prevFrom ? p30Totals(bounds.prevFrom, bounds.prevTo) : null;
-    var kCur = p30Profit(cur);
-    var kPrev = prev ? p30Profit(prev) : null;
+    var currency = (mg.meta && mg.meta.currency) || displayCurrency();
+    var bounds = periodBounds(days);
+
+    var cur = marginTotals(days, bounds.from, bounds.to);
+    cur.subscription = marginSubscription(bounds.from || minDate(days), bounds.to);
+    var kCur = marginCalc(cur);
+
+    var prev = null, kPrev = null;
+    if (bounds.prevFrom) {
+      prev = marginTotals(days, bounds.prevFrom, bounds.prevTo);
+      prev.subscription = marginSubscription(bounds.prevFrom, bounds.prevTo);
+      kPrev = marginCalc(prev);
+    }
+
 
     $("p30-range").textContent = bounds.from
-      ? Fmt.date(bounds.from) + " — " + Fmt.date(bounds.to)
-      : "";
+      ? Fmt.date(bounds.from) + " — " + Fmt.date(bounds.to) : "";
 
-    /* ---- Дыры в выгрузке ---- */
+    /* ---- Незаполненные сутки ---- */
     var gaps = p30Gaps(bounds.from, bounds.to);
     $("p30-gap").hidden = gaps.length === 0;
     if (gaps.length) {
-      $("p30-gap-text").textContent = T("p30.gapText")
-        .replace("{dates}", gaps.map(function (d) { return Fmt.date(d); }).join(", "));
+      $("p30-gap-text").textContent = T("p30.gapText").replace(
+        "{dates}", gaps.map(function (d) { return Fmt.date(d); }).join(", "));
     }
 
     /* ---- Плитки ---- */
@@ -927,8 +910,7 @@
       value: Fmt.money(cur.revenue, currency),
       delta: prev ? growth(cur.revenue, prev.revenue) : null,
       meter: kCur.marginPct != null
-        ? { label: T("kpi.margin"), value: kCur.marginPct }
-        : null
+        ? { label: T("kpi.margin"), value: kCur.marginPct } : null
     });
 
     renderStat($("p30-kpi-profit"), {
@@ -939,13 +921,13 @@
       note: kCur.profit == null ? T("p30.noCogs") : null
     });
 
+    /* Дельта маржи — разность в процентных пунктах, а не рост в процентах */
     var dMargin = (kCur.marginPct != null && kPrev && kPrev.marginPct != null)
       ? kCur.marginPct - kPrev.marginPct : null;
     renderStat($("p30-kpi-margin"), {
       label: T("kpi.margin"),
       value: kCur.marginPct == null ? "—" : Fmt.percent(kCur.marginPct),
       delta: dMargin,
-      /* Дельта маржи — разность в процентных пунктах, а не рост в процентах */
       deltaText: dMargin == null ? null
         : (dMargin > 0 ? "+" : "") + Fmt.number(dMargin * 100, 2) + " " + T("margin.pp")
     });
@@ -975,17 +957,18 @@
     });
 
     /* ---- Пять самых значимых изменений ----
-       Каждая статья считается в деньгах и подписывается тем, как она влияет
-       на прибыль: продажи прибавляют, расходы вычитают. */
+       Ранжируются по величине изменения в деньгах. «Влияние на прибыль»
+       несёт знак: рост расхода прибыль уменьшает. */
     var moverBox = $("p30-movers");
     moverBox.textContent = "";
     if (!prev) {
       moverBox.appendChild(el("p", "card__caption", T("p30.noPrev")));
     } else {
       var candidates = [
-        { label: T("p30.item.netSales"), cur: cur.net, prev: prev.net, income: true },
+        { label: T("kpi.revenue"), cur: cur.revenue, prev: prev.revenue, income: true },
         { label: T("margin.ads"), cur: cur.ads, prev: prev.ads, income: false },
-        { label: T("kpi.cogs"), cur: cur.cogs, prev: prev.cogs, income: false, skip: !cur.cogsKnown }
+        { label: T("kpi.cogs"), cur: cur.cogs, prev: prev.cogs, income: false },
+        { label: T("kpi.refunds"), cur: cur.refunded, prev: prev.refunded, income: false }
       ];
       var fCur = p30Fees(bounds.from, bounds.to);
       var fPrev = p30Fees(bounds.prevFrom, bounds.prevTo);
@@ -993,21 +976,15 @@
       Object.keys(fCur).concat(Object.keys(fPrev)).forEach(function (k) {
         if (seen[k]) return;
         seen[k] = true;
-        candidates.push({
-          label: k,
-          cur: fCur[k] || 0, prev: fPrev[k] || 0, income: false
-        });
+        candidates.push({ label: k, cur: fCur[k] || 0, prev: fPrev[k] || 0, income: false });
       });
 
-      var movers = candidates.filter(function (c) { return !c.skip; }).map(function (c) {
+      var movers = candidates.map(function (c) {
         var d = c.cur - c.prev;
-        return {
-          label: c.label, delta: d, cur: c.cur, prev: c.prev,
-          /* Влияние на прибыль: рост расхода её уменьшает */
-          effect: c.income ? d : -d
-        };
-      }).sort(function (a, b) { return Math.abs(b.delta) - Math.abs(a.delta); })
-        .slice(0, 5);
+        return { label: c.label, delta: d, cur: c.cur, prev: c.prev, effect: c.income ? d : -d };
+      }).sort(function (a, b) {
+        return Math.abs(b.delta) - Math.abs(a.delta);
+      }).slice(0, 5);
 
       global.Charts.table(moverBox, {
         caption: T("p30.movers"),
@@ -1030,17 +1007,21 @@
       });
     }
 
-    /* ---- Мостик прибыли ---- */
+    /* ---- Мостик прибыли ----
+       Слагаемые в сумме дают изменение прибыли, поэтому подписка тоже
+       участвует: она входит в формулу marginCalc. */
     var bridgeBox = $("p30-bridge");
     bridgeBox.textContent = "";
-    if (!prev || !cur.cogsKnown || !prev.cogsKnown) {
+    if (!prev || kCur.profit == null || !kPrev || kPrev.profit == null) {
       bridgeBox.appendChild(el("p", "card__caption", T("p30.noPrev")));
     } else {
       var bRows = [
-        [T("p30.item.netSales"), cur.net - prev.net],
+        [T("kpi.revenue"), cur.revenue - prev.revenue],
+        [T("kpi.refunds"), -(cur.refunded - prev.refunded)],
         [T("kpi.fees"), -(cur.fees - prev.fees)],
         [T("margin.ads"), -(cur.ads - prev.ads)],
-        [T("kpi.cogs"), -(cur.cogs - prev.cogs)]
+        [T("kpi.cogs"), -(cur.cogs - prev.cogs)],
+        [T("margin.subscription"), -((cur.subscription || 0) - (prev.subscription || 0))]
       ];
       global.Charts.table(bridgeBox, {
         caption: T("p30.bridge"),
@@ -1049,10 +1030,7 @@
           { label: T("p30.col.effect"), numeric: true }
         ],
         rows: bRows.map(function (r) {
-          return [r[0], {
-            text: (r[1] > 0 ? "+" : "") + Fmt.money(r[1], currency),
-            color: r[1] >= 0 ? "var(--status-good)" : "var(--status-bad)"
-          }];
+          return [r[0], (r[1] > 0 ? "+" : "") + Fmt.money(r[1], currency)];
         }),
         footRow: [
           T("kpi.profit"),
@@ -1094,40 +1072,32 @@
         T("table.total"),
         Fmt.money(prev ? prev.fees : 0, currency),
         Fmt.money(cur.fees, currency),
-        prev ? ((cur.fees - prev.fees > 0 ? "+" : "") + Fmt.money(cur.fees - prev.fees, currency)) : "—"
+        prev ? ((cur.fees - prev.fees > 0 ? "+" : "") +
+          Fmt.money(cur.fees - prev.fees, currency)) : "—"
       ]
     });
 
-    /* ---- Витрины ---- */
-    var mkMap = {};
-    function mkBucket(id) {
-      return mkMap[id] || (mkMap[id] = {
-        id: id, cRev: 0, pRev: 0, cProc: 0, pProc: 0,
-        cCogs: 0, pCogs: 0, known: false
-      });
-    }
-    ecoDays().forEach(function (r) {
-      var inCur = matches(r, bounds.from, bounds.to);
-      var inPrev = bounds.prevFrom && matches(r, bounds.prevFrom, bounds.prevTo);
-      if (!inCur && !inPrev) return;
-      var b = mkBucket(r.marketplace);
-      if (inCur) {
-        b.cRev += Number(r.orderedSales) || 0;
-        b.cProc += Number(r.netProceeds) || 0;
-        if (r.cogs != null) { b.cCogs += Number(r.cogs) || 0; b.known = true; }
-      } else {
-        b.pRev += Number(r.orderedSales) || 0;
-        b.pProc += Number(r.netProceeds) || 0;
-        if (r.cogs != null) { b.pCogs += Number(r.cogs) || 0; }
-      }
+    /* ---- Витрины ----
+       Прибыль площадки считает тот же marginCalc. Подписка account-level
+       и по витринам не раскладывается, поэтому в разрез не входит —
+       сумма строк на неё и разойдётся с итогом.  */
+    var ids = {};
+    days.forEach(function (r) {
+      if (matches(r, bounds.from, bounds.to)) ids[r.marketplace] = true;
+      if (bounds.prevFrom && matches(r, bounds.prevFrom, bounds.prevTo)) ids[r.marketplace] = true;
     });
-    var mkList = Object.keys(mkMap).map(function (id) {
-      var b = mkMap[id];
-      var cp = b.known ? b.cProc - b.cCogs : null;
-      var pp2 = b.known ? b.pProc - b.pCogs : null;
+    var mkList = Object.keys(ids).map(function (id) {
+      var only = days.filter(function (r) { return r.marketplace === id; });
+      var c = marginTotals(only, bounds.from, bounds.to);
+      var kc = marginCalc(c);
+      var kp = null;
+      if (bounds.prevFrom) {
+        kp = marginCalc(marginTotals(only, bounds.prevFrom, bounds.prevTo));
+      }
       return {
-        name: marketplaceName(id), rev: b.cRev, dRev: b.cRev - b.pRev,
-        profit: cp, dProfit: (cp != null && pp2 != null) ? cp - pp2 : null
+        name: marketplaceName(id), rev: c.revenue,
+        profit: kc.profit, marginPct: kc.marginPct,
+        dProfit: (kc.profit != null && kp && kp.profit != null) ? kc.profit - kp.profit : null
       };
     }).sort(function (a, b) { return b.rev - a.rev; });
 
@@ -1136,17 +1106,17 @@
       columns: [
         { label: T("cmp.col.market") },
         { label: T("cmp.col.revenue"), numeric: true },
-        { label: "Δ " + T("cmp.col.revenue"), numeric: true },
         { label: T("cmp.col.profit"), numeric: true },
-        { label: "Δ " + T("cmp.col.profit"), numeric: true }
+        { label: "Δ " + T("cmp.col.profit"), numeric: true },
+        { label: T("cmp.col.margin"), numeric: true }
       ],
       rows: mkList.map(function (m) {
         return [
           m.name,
           Fmt.money(m.rev, currency),
-          (m.dRev > 0 ? "+" : "") + Fmt.money(m.dRev, currency),
           m.profit == null ? "—" : Fmt.money(m.profit, currency),
-          m.dProfit == null ? "—" : (m.dProfit > 0 ? "+" : "") + Fmt.money(m.dProfit, currency)
+          m.dProfit == null ? "—" : (m.dProfit > 0 ? "+" : "") + Fmt.money(m.dProfit, currency),
+          m.marginPct == null ? "—" : Fmt.percent(m.marginPct)
         ];
       })
     });
@@ -1633,8 +1603,13 @@
   function marginCalc(t) {
     if (t.cogs == null) return { profit: null, marginPct: null };
     var revenue = Number(t.revenue) || 0;
-    var profit = revenue - (Number(t.fees) || 0) - (Number(t.ads) || 0) -
-      (Number(t.cogs) || 0) - (Number(t.subscription) || 0);
+    /* Возвраты вычитаются обязательно: revenue здесь — orderedProductSales,
+       то есть сумма ДО возвратов. Пока этой строки не было, деньги,
+       вернувшиеся покупателю, оставались в прибыли и заметно её завышали.
+       Знаменатель маржи — валовая выручка: тогда он совпадает с плиткой
+       «Выручка», а возвраты видны отдельной статьёй. */
+    var profit = revenue - (Number(t.refunded) || 0) - (Number(t.fees) || 0) -
+      (Number(t.ads) || 0) - (Number(t.cogs) || 0) - (Number(t.subscription) || 0);
     return { profit: profit, marginPct: revenue > 0 ? profit / revenue : null };
   }
 
@@ -1652,7 +1627,7 @@
 
   /* Свод дневных строк за период с учётом фильтра витрины */
   function marginTotals(list, from, to) {
-    var t = { revenue: 0, units: 0, fees: 0, ads: 0, cogs: 0, subscription: 0 };
+    var t = { revenue: 0, units: 0, fees: 0, ads: 0, cogs: 0, refunded: 0, subscription: 0 };
     list.forEach(function (r) {
       if (!matches(r, from, to)) return;
       t.revenue += Number(r.revenue) || 0;
@@ -1660,6 +1635,7 @@
       t.fees += Number(r.fees) || 0;
       t.ads += Number(r.ads) || 0;
       t.cogs += Number(r.cogs) || 0;
+      t.refunded += Number(r.refunded) || 0;
     });
     return t;
   }
@@ -2091,6 +2067,7 @@
     var feeS = byDate(curRows, "fees", bounds.from, bounds.to);
     var adsS = byDate(curRows, "ads", bounds.from, bounds.to);
     var cogsS = byDate(curRows, "cogs", bounds.from, bounds.to);
+    var refS = byDate(curRows, "refunded", bounds.from, bounds.to);
 
     function tail(values, n) { return values.slice(Math.max(0, values.length - n)); }
 
@@ -2149,7 +2126,7 @@
        значило бы рисовать выдуманные значения. */
     var profitVals = revS.labels.map(function (d, i) {
       return marginCalc({
-        revenue: revS.values[i], fees: feeS.values[i],
+        revenue: revS.values[i], fees: feeS.values[i], refunded: refS.values[i],
         ads: adsS.values[i], cogs: cogsS.values[i]
       }).profit;
     });
@@ -2197,12 +2174,13 @@
       if (state.filters.marketplace !== "all" &&
           r.marketplace !== state.filters.marketplace) return;
       var t = monthAgg[r.month] || (monthAgg[r.month] = {
-        revenue: 0, fees: 0, ads: 0, cogs: 0, subscription: 0
+        revenue: 0, fees: 0, ads: 0, cogs: 0, refunded: 0, subscription: 0
       });
       t.revenue += Number(r.revenue) || 0;
       t.fees += Number(r.fees) || 0;
       t.ads += Number(r.ads) || 0;
       t.cogs += Number(r.cogs) || 0;
+      t.refunded += Number(r.refunded) || 0;
       t.subscription += Number(r.subscription) || 0;
     });
 
@@ -2292,12 +2270,13 @@
     weekRows.forEach(function (r) {
       var key = r.asin || "—";
       var p = prodMap[key] || (prodMap[key] = {
-        asin: key, revenue: 0, units: 0, fees: 0, ads: 0, cogs: 0, noCogs: false
+        asin: key, revenue: 0, units: 0, fees: 0, ads: 0, cogs: 0, refunded: 0, noCogs: false
       });
       p.revenue += Number(r.revenue) || 0;
       p.units += Number(r.units) || 0;
       p.fees += Number(r.fees) || 0;
       p.ads += Number(r.ads) || 0;
+      p.refunded += Number(r.refunded) || 0;
       /* Хоть одна неделя без себестоимости — весь товар «без COGS»:
          сумма из известной части занизила бы затраты и завысила маржу */
       if (r.cogs == null) { p.noCogs = true; } else { p.cogs += Number(r.cogs) || 0; }
@@ -2399,7 +2378,7 @@
     prods.forEach(function (p) {
       var isOther = p.asin === "OTHER";
       var k = marginCalc({
-        revenue: p.revenue, fees: p.fees, ads: p.ads,
+        revenue: p.revenue, fees: p.fees, ads: p.ads, refunded: p.refunded,
         cogs: p.noCogs ? null : p.cogs
       });
 

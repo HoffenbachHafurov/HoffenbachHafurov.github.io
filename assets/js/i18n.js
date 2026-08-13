@@ -179,7 +179,7 @@
         "Отобраны по величине изменения в деньгах. «Влияние на прибыль» учитывает знак: рост расхода прибыль уменьшает.",
       "p30.bridge": "Из чего сложилось изменение прибыли",
       "p30.bridgeCaption":
-        "Прибыль = чистые продажи − комиссии − реклама − себестоимость. Слагаемые в сумме дают изменение прибыли.",
+        "Прибыль = выручка − возвраты − комиссии − реклама − себестоимость − подписка. Слагаемые в сумме дают изменение прибыли.",
       "p30.fees": "Комиссии Amazon по типам",
       "p30.feesCaption":
         "Списания положительные, возвраты денег продавцу отрицательные. Реклама сюда не входит — она отдельная статья.",
@@ -433,7 +433,7 @@
         "Ranked by the size of the change in money. “Effect on profit” carries the sign: a rising cost lowers profit.",
       "p30.bridge": "What moved the profit",
       "p30.bridgeCaption":
-        "Profit = net sales − fees − advertising − COGS. The terms add up to the change in profit.",
+        "Profit = revenue − refunds − fees − advertising − COGS − subscription. The terms add up to the change in profit.",
       "p30.fees": "Amazon fees by type",
       "p30.feesCaption":
         "Charges are positive, money returned to the seller is negative. Advertising is not included — it is a separate line.",
@@ -687,7 +687,7 @@
         "Відібрані за величиною зміни у грошах. «Вплив на прибуток» враховує знак: зростання витрати прибуток зменшує.",
       "p30.bridge": "З чого склалася зміна прибутку",
       "p30.bridgeCaption":
-        "Прибуток = чисті продажі − комісії − реклама − собівартість. Доданки в сумі дають зміну прибутку.",
+        "Прибуток = виторг − повернення − комісії − реклама − собівартість − підписка. Доданки в сумі дають зміну прибутку.",
       "p30.fees": "Комісії Amazon за типами",
       "p30.feesCaption":
         "Списання додатні, повернення грошей продавцю від’ємні. Реклама сюди не входить — це окрема стаття.",
