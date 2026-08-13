@@ -142,6 +142,98 @@
       "table.ordered": "Заказано",
       "table.refunded": "Возвращено",
 
+      /* --- Маржа по странам --- */
+      "page.margin": "Маржа по странам",
+      "margin.empty": "В данных нет узла маржи. Обновите выгрузку конвейера.",
+      "kpi.revenueNet": "Выручка (нетто)",
+      "kpi.amazonCosts": "Расходы Amazon",
+      "kpi.cogs": "Себестоимость (COGS)",
+      "kpi.profit": "Прибыль",
+      "margin.pp": "п.п.",
+      "chart.marginTrend": "Выручка и прибыль по дням",
+      "chart.marginTrendCaption":
+        "Прибыль = выручка нетто минус комиссии, реклама и себестоимость. Подписка месячная и в дневные точки не входит.",
+      "chart.seasonality": "Сезонность: маржа по месяцам",
+      "margin.seasonNote":
+        "Фильтр периода здесь не действует — показан весь диапазон данных. Фильтр витрины действует.",
+      "margin.breakdown": "Разбор расходов",
+      "margin.breakdownCaption": "За выбранный период. Доля — от выручки нетто.",
+      "margin.ads": "Реклама",
+      "margin.subscription": "Подписка Amazon",
+      "chart.asinWeekly": "Недельная выручка выбранных товаров",
+      "margin.pickHint":
+        "Отметьте до шести товаров в таблице ниже — их линии появятся здесь.",
+      "margin.products": "Товары (ASIN)",
+      "margin.inChart": "В график",
+      "margin.noCogs": "нет COGS",
+      "margin.noCogsHint": "Себестоимость не задана — маржа этого товара не считается.",
+      "margin.cogsNote": "Себестоимость известна для {x} из {y} товаров.",
+
+      /* --- Раздел «4»: сравнение площадок --- */
+      "page.cmp4": "4",
+      "page.p30": "1",
+      "p30.subtitle": "Выбранный период против предыдущего такой же длины",
+      "p30.empty": "В выгрузке нет узла economics — сравнивать нечего.",
+      "p30.movers": "Пять самых значимых изменений",
+      "p30.moversCaption":
+        "Отобраны по величине изменения в деньгах. «Влияние на прибыль» учитывает знак: рост расхода прибыль уменьшает.",
+      "p30.bridge": "Из чего сложилось изменение прибыли",
+      "p30.bridgeCaption":
+        "Прибыль = чистые продажи − комиссии − реклама − себестоимость. Слагаемые в сумме дают изменение прибыли.",
+      "p30.fees": "Комиссии Amazon по типам",
+      "p30.feesCaption":
+        "Списания положительные, возвраты денег продавцу отрицательные. Реклама сюда не входит — она отдельная статья.",
+      "p30.markets": "Витрины",
+      "p30.item.netSales": "Чистые продажи",
+      "p30.col.item": "Статья",
+      "p30.col.was": "Было",
+      "p30.col.now": "Стало",
+      "p30.col.change": "Изменение",
+      "p30.col.effect": "Влияние на прибыль",
+      "p30.noCogs": "Себестоимость неизвестна",
+      "p30.noPrev": "Предыдущий период недоступен — сравнивать не с чем.",
+      "p30.ofRevenue": "{x} от выручки",
+      "p30.gapTitle": "Дыра в выгрузке",
+      "p30.gapText":
+        "За эти сутки есть комиссии и реклама, но нет ни одной продажи: {dates}. Расход без выручки занижает прибыль периода — цифры ниже неполные.",
+      "cmp.subtitle": "Площадки за выбранный период против предыдущего периода такой же длины",
+      "cmp.empty": "В выгрузке нет узла economics — сравнивать нечего.",
+      "cmp.allMarkets":
+        "Страница всегда сравнивает все площадки, поэтому фильтр витрины к ней не применяется. Фильтр периода действует.",
+      "cmp.table": "Площадки по чистой прибыли",
+      "cmp.tableCaption":
+        "Отсортировано по прибыли за период. Δ — против предыдущего периода той же длины, маржа — в процентных пунктах.",
+      "cmp.noCogsNote":
+        "Себестоимости в выгрузке нет, поэтому вместо чистой прибыли показан чистый доход: выручка минус комиссии и реклама.",
+      "cmp.col.market": "Площадка",
+      "cmp.col.revenue": "Выручка",
+      "cmp.col.orders": "Заказы",
+      "cmp.col.fees": "Комиссии",
+      "cmp.col.ads": "Реклама",
+      "cmp.col.cogs": "COGS",
+      "cmp.col.profit": "Прибыль",
+      "cmp.col.netProceeds": "Чистый доход",
+      "cmp.col.margin": "Маржа",
+      "cmp.flag": "Выручка растёт, маржа падает",
+      "cmp.flagCaption":
+        "Площадки, где выручка выше прошлого периода, а маржа ниже. Доли комиссий, рекламы и себестоимости в выручке: было → стало.",
+      "cmp.flagNone": "Таких площадок за выбранный период нет.",
+      "cmp.quality": "Качество данных",
+      "cmp.qualityOk":
+        "Пустых дней в периоде нет, базовые комиссии есть на всех площадках.",
+      "cmp.zeroDays":
+        "Пустые дни в выгрузке: {x} — дата на месте и строки есть, но все суммы нулевые, итоги периода занижены.",
+      "cmp.noFees":
+        "Нет базовых комиссий (ReferralFee, FbaFulfilmentFee): {x}. Прибыль и маржа этих площадок завышены и сравнению не подлежат.",
+      "cmp.badge.noFees": "нет комиссий",
+      "cmp.ordersUnknown":
+        "Числа заказов в выгрузке нет: Data Kiosk отдаёт только штуки.",
+      "table.lineItem": "Статья",
+      "table.month": "Месяц",
+      "table.week": "Неделя",
+      "table.costs": "Расходы",
+      "table.cogs": "COGS",
+
       "sync.title": "Синхронизация данных",
       "sync.close": "Закрыть",
       "sync.more": "Подробнее — весь журнал",
@@ -304,6 +396,98 @@
       "table.ordered": "Ordered",
       "table.refunded": "Refunded",
 
+      /* --- Margin by country --- */
+      "page.margin": "Margin by country",
+      "margin.empty": "This dataset has no margin node. Refresh the pipeline export.",
+      "kpi.revenueNet": "Revenue (net)",
+      "kpi.amazonCosts": "Amazon costs",
+      "kpi.cogs": "COGS",
+      "kpi.profit": "Profit",
+      "margin.pp": "pp",
+      "chart.marginTrend": "Revenue and profit by day",
+      "chart.marginTrendCaption":
+        "Profit = net revenue minus fees, advertising and COGS. The subscription is monthly and is not part of the daily points.",
+      "chart.seasonality": "Seasonality: margin by month",
+      "margin.seasonNote":
+        "The period filter does not apply here — the whole data range is shown. The marketplace filter does apply.",
+      "margin.breakdown": "Cost breakdown",
+      "margin.breakdownCaption": "For the selected period. Share is of net revenue.",
+      "margin.ads": "Advertising",
+      "margin.subscription": "Amazon subscription",
+      "chart.asinWeekly": "Weekly revenue of selected products",
+      "margin.pickHint":
+        "Tick up to six products in the table below — their lines will appear here.",
+      "margin.products": "Products (ASIN)",
+      "margin.inChart": "In chart",
+      "margin.noCogs": "no COGS",
+      "margin.noCogsHint": "Cost is not set — this product's margin cannot be computed.",
+      "margin.cogsNote": "Cost is known for {x} of {y} products.",
+
+      /* --- Section "4": marketplace comparison --- */
+      "page.cmp4": "4",
+      "page.p30": "1",
+      "p30.subtitle": "Selected period against the previous period of equal length",
+      "p30.empty": "The payload has no economics node — nothing to compare.",
+      "p30.movers": "Five most significant changes",
+      "p30.moversCaption":
+        "Ranked by the size of the change in money. “Effect on profit” carries the sign: a rising cost lowers profit.",
+      "p30.bridge": "What moved the profit",
+      "p30.bridgeCaption":
+        "Profit = net sales − fees − advertising − COGS. The terms add up to the change in profit.",
+      "p30.fees": "Amazon fees by type",
+      "p30.feesCaption":
+        "Charges are positive, money returned to the seller is negative. Advertising is not included — it is a separate line.",
+      "p30.markets": "Marketplaces",
+      "p30.item.netSales": "Net sales",
+      "p30.col.item": "Line",
+      "p30.col.was": "Was",
+      "p30.col.now": "Now",
+      "p30.col.change": "Change",
+      "p30.col.effect": "Effect on profit",
+      "p30.noCogs": "Cost of goods unknown",
+      "p30.noPrev": "No previous period available — nothing to compare against.",
+      "p30.ofRevenue": "{x} of revenue",
+      "p30.gapTitle": "Gap in the export",
+      "p30.gapText":
+        "These days carry fees and advertising but not a single sale: {dates}. Cost without revenue understates the period’s profit — the figures below are incomplete.",
+      "cmp.subtitle": "Marketplaces over the selected period against the previous period of equal length",
+      "cmp.empty": "The payload has no economics node — nothing to compare.",
+      "cmp.allMarkets":
+        "This page always compares every marketplace, so the marketplace filter does not apply here. The period filter does.",
+      "cmp.table": "Marketplaces by net profit",
+      "cmp.tableCaption":
+        "Sorted by profit for the period. Δ is against the previous period of equal length; margin is in percentage points.",
+      "cmp.noCogsNote":
+        "The payload carries no cost of goods, so net proceeds are shown instead of net profit: revenue less fees and advertising.",
+      "cmp.col.market": "Marketplace",
+      "cmp.col.revenue": "Revenue",
+      "cmp.col.orders": "Orders",
+      "cmp.col.fees": "Fees",
+      "cmp.col.ads": "Ads",
+      "cmp.col.cogs": "COGS",
+      "cmp.col.profit": "Profit",
+      "cmp.col.netProceeds": "Net proceeds",
+      "cmp.col.margin": "Margin",
+      "cmp.flag": "Revenue up, margin down",
+      "cmp.flagCaption":
+        "Marketplaces whose revenue rose while margin fell. Shares of fees, ads and cost in revenue: before → after.",
+      "cmp.flagNone": "No such marketplace in the selected period.",
+      "cmp.quality": "Data quality",
+      "cmp.qualityOk":
+        "No empty days in the period, and every marketplace carries its core fees.",
+      "cmp.zeroDays":
+        "Empty days in the payload: {x} — the date and its rows are present but every amount is zero, so period totals are understated.",
+      "cmp.noFees":
+        "Core fees missing (ReferralFee, FbaFulfilmentFee): {x}. Profit and margin for these marketplaces are overstated and not comparable.",
+      "cmp.badge.noFees": "no fees",
+      "cmp.ordersUnknown":
+        "The payload carries no order count: Data Kiosk reports units only.",
+      "table.lineItem": "Line item",
+      "table.month": "Month",
+      "table.week": "Week",
+      "table.costs": "Costs",
+      "table.cogs": "COGS",
+
       "sync.title": "Data sync",
       "sync.close": "Close",
       "sync.more": "Details â full log",
@@ -465,6 +649,98 @@
       "table.netProceeds": "Чистий дохід",
       "table.ordered": "Замовлено",
       "table.refunded": "Повернено",
+
+      /* --- Маржа за країнами --- */
+      "page.margin": "Маржа за країнами",
+      "margin.empty": "У даних немає вузла маржі. Оновіть вивантаження конвеєра.",
+      "kpi.revenueNet": "Виторг (нетто)",
+      "kpi.amazonCosts": "Витрати Amazon",
+      "kpi.cogs": "Собівартість (COGS)",
+      "kpi.profit": "Прибуток",
+      "margin.pp": "п.п.",
+      "chart.marginTrend": "Виторг і прибуток за днями",
+      "chart.marginTrendCaption":
+        "Прибуток = виторг нетто мінус комісії, реклама та собівартість. Підписка місячна й у денні точки не входить.",
+      "chart.seasonality": "Сезонність: маржа за місяцями",
+      "margin.seasonNote":
+        "Фільтр періоду тут не діє — показано весь діапазон даних. Фільтр вітрини діє.",
+      "margin.breakdown": "Розбір витрат",
+      "margin.breakdownCaption": "За обраний період. Частка — від виторгу нетто.",
+      "margin.ads": "Реклама",
+      "margin.subscription": "Підписка Amazon",
+      "chart.asinWeekly": "Тижневий виторг обраних товарів",
+      "margin.pickHint":
+        "Позначте до шести товарів у таблиці нижче — їхні лінії з'являться тут.",
+      "margin.products": "Товари (ASIN)",
+      "margin.inChart": "У графік",
+      "margin.noCogs": "немає COGS",
+      "margin.noCogsHint": "Собівартість не задано — маржа цього товару не рахується.",
+      "margin.cogsNote": "Собівартість відома для {x} з {y} товарів.",
+
+      /* --- Розділ «4»: порівняння майданчиків --- */
+      "page.cmp4": "4",
+      "page.p30": "1",
+      "p30.subtitle": "Вибраний період проти попереднього такої ж довжини",
+      "p30.empty": "У вивантаженні немає вузла economics — порівнювати нічого.",
+      "p30.movers": "П’ять найзначущіших змін",
+      "p30.moversCaption":
+        "Відібрані за величиною зміни у грошах. «Вплив на прибуток» враховує знак: зростання витрати прибуток зменшує.",
+      "p30.bridge": "З чого склалася зміна прибутку",
+      "p30.bridgeCaption":
+        "Прибуток = чисті продажі − комісії − реклама − собівартість. Доданки в сумі дають зміну прибутку.",
+      "p30.fees": "Комісії Amazon за типами",
+      "p30.feesCaption":
+        "Списання додатні, повернення грошей продавцю від’ємні. Реклама сюди не входить — це окрема стаття.",
+      "p30.markets": "Вітрини",
+      "p30.item.netSales": "Чисті продажі",
+      "p30.col.item": "Стаття",
+      "p30.col.was": "Було",
+      "p30.col.now": "Стало",
+      "p30.col.change": "Зміна",
+      "p30.col.effect": "Вплив на прибуток",
+      "p30.noCogs": "Собівартість невідома",
+      "p30.noPrev": "Попередній період недоступний — немає з чим порівнювати.",
+      "p30.ofRevenue": "{x} від виторгу",
+      "p30.gapTitle": "Дірка у вивантаженні",
+      "p30.gapText":
+        "За ці доби є комісії та реклама, але немає жодного продажу: {dates}. Витрата без виторгу занижує прибуток періоду — цифри нижче неповні.",
+      "cmp.subtitle": "Майданчики за вибраний період проти попереднього періоду такої ж довжини",
+      "cmp.empty": "У вивантаженні немає вузла economics — порівнювати нічого.",
+      "cmp.allMarkets":
+        "Сторінка завжди порівнює всі майданчики, тому фільтр вітрини до неї не застосовується. Фільтр періоду діє.",
+      "cmp.table": "Майданчики за чистим прибутком",
+      "cmp.tableCaption":
+        "Відсортовано за прибутком за період. Δ — проти попереднього періоду такої ж довжини, маржа — у відсоткових пунктах.",
+      "cmp.noCogsNote":
+        "Собівартості у вивантаженні немає, тому замість чистого прибутку показано чистий дохід: виручка мінус комісії та реклама.",
+      "cmp.col.market": "Майданчик",
+      "cmp.col.revenue": "Виручка",
+      "cmp.col.orders": "Замовлення",
+      "cmp.col.fees": "Комісії",
+      "cmp.col.ads": "Реклама",
+      "cmp.col.cogs": "COGS",
+      "cmp.col.profit": "Прибуток",
+      "cmp.col.netProceeds": "Чистий дохід",
+      "cmp.col.margin": "Маржа",
+      "cmp.flag": "Виручка зростає, маржа падає",
+      "cmp.flagCaption":
+        "Майданчики, де виручка вища за минулий період, а маржа нижча. Частки комісій, реклами та собівартості у виручці: було → стало.",
+      "cmp.flagNone": "Таких майданчиків за вибраний період немає.",
+      "cmp.quality": "Якість даних",
+      "cmp.qualityOk":
+        "Порожніх днів у періоді немає, базові комісії є на всіх майданчиках.",
+      "cmp.zeroDays":
+        "Порожні дні у вивантаженні: {x} — дата на місці й рядки є, але всі суми нульові, підсумки періоду занижені.",
+      "cmp.noFees":
+        "Немає базових комісій (ReferralFee, FbaFulfilmentFee): {x}. Прибуток і маржа цих майданчиків завищені й порівнянню не підлягають.",
+      "cmp.badge.noFees": "немає комісій",
+      "cmp.ordersUnknown":
+        "Числа замовлень у вивантаженні немає: Data Kiosk віддає лише штуки.",
+      "table.lineItem": "Стаття",
+      "table.month": "Місяць",
+      "table.week": "Тиждень",
+      "table.costs": "Витрати",
+      "table.cogs": "COGS",
 
       "sync.title": "Синхронізація даних",
       "sync.close": "Закрити",

@@ -1547,3 +1547,53 @@ table.data tbody tr:last-child td {
   .wiki__nav { position: static; flex-direction: row; flex-wrap: wrap; }
   .wiki__body { padding: var(--sp-4); }
 }
+
+/* ============================================================================
+   Маржа по странам (раздел «margin»)
+   Дописано отдельной секцией в конец, как и «База знаний»: видно, что пришло
+   с этой задачей, и откат сводится к удалению хвоста файла.
+   ========================================================================== */
+
+/* Бейдж «нет COGS» у товара без себестоимости. Это предупреждение о
+   неполноте данных, а не серия и не статус-ошибка: нейтральная бейджевая
+   заливка, смысл несут текст и title-подсказка, а не цвет. */
+.margin-nocogs {
+  display: inline-block;
+  margin-left: var(--sp-2);
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--badge-flat-bg);
+  color: var(--text-secondary);
+  font-size: var(--fs-micro);
+  white-space: nowrap;
+  cursor: help;
+}
+
+/* Чекбокс «в график»: крупнее умолчания, чтобы в него было легко попасть,
+   акцент — цветом первой серии (это выбор серий графика и есть) */
+.margin-pick {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--series-1);
+  cursor: pointer;
+}
+
+/* Колонка с чекбоксами узкая и центрированная */
+table.data th.margin-pick-cell,
+table.data td.margin-pick-cell {
+  text-align: center;
+  width: 1%;
+  white-space: nowrap;
+}
+
+/* Строка OTHER приглушена: это свёрнутый хвост, а не товар */
+table.data tr.margin-other td {
+  color: var(--text-muted);
+}
+
+/* Таблица товаров — основное содержимое карточки, а не скрытый двойник
+   графика: ограничение высоты с внутренней прокруткой здесь прятало бы
+   строку OTHER и половину списка. Снимаем его. */
+#m-products .table-wrap {
+  max-height: none;
+}

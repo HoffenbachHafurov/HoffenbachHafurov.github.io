@@ -346,33 +346,62 @@
       /* --- Сами серии --- */
       series.forEach(function (s, si) {
         var color = seriesColor(si, s.color);
-        var pts = s.values.map(function (v, i) {
-          return typeof v === "number" ? [xAt(i), yAt(v)] : null;
-        }).filter(Boolean);
-        if (!pts.length) return;
+
+        /* Пропуск в данных (null) — это РАЗРЫВ линии, а не ноль. Соединять
+           точки через дыру нельзя: линия нарисовала бы значение там, где
+           данных нет. Поэтому серия режется на сегменты между пропусками,
+           и каждый сегмент рисуется отдельным штрихом. */
+        var segs = [];
+        var seg = [];
+        s.values.forEach(function (v, i) {
+          if (typeof v === "number") {
+            seg.push([xAt(i), yAt(v)]);
+          } else if (seg.length) {
+            segs.push(seg);
+            seg = [];
+          }
+        });
+        if (seg.length) segs.push(seg);
+        if (!segs.length) return;
+
+        function pathOf(pts) {
+          return pts.map(function (p, i) {
+            return (i === 0 ? "M" : "L") + p[0].toFixed(2) + "," + p[1].toFixed(2);
+          }).join(" ");
+        }
 
         /* Заливка области — только когда серия одна; на нескольких сериях
            перекрытие заливок нечитаемо */
         if (series.length === 1 && opts.area !== false) {
-          var areaD = pts.map(function (p, i) {
-            return (i === 0 ? "M" : "L") + p[0].toFixed(2) + "," + p[1].toFixed(2);
-          }).join(" ") +
-            " L" + pts[pts.length - 1][0].toFixed(2) + "," + yAt(Math.max(yMin, 0)).toFixed(2) +
-            " L" + pts[0][0].toFixed(2) + "," + yAt(Math.max(yMin, 0)).toFixed(2) + " Z";
-          svg.appendChild(svgEl("path", { d: areaD, fill: color, class: "area-fill" }));
+          var base = yAt(Math.max(yMin, 0)).toFixed(2);
+          segs.forEach(function (pts) {
+            if (pts.length < 2) return;
+            var areaD = pathOf(pts) +
+              " L" + pts[pts.length - 1][0].toFixed(2) + "," + base +
+              " L" + pts[0][0].toFixed(2) + "," + base + " Z";
+            svg.appendChild(svgEl("path", { d: areaD, fill: color, class: "area-fill" }));
+          });
         }
 
-        svg.appendChild(svgEl("path", {
-          d: pts.map(function (p, i) {
-            return (i === 0 ? "M" : "L") + p[0].toFixed(2) + "," + p[1].toFixed(2);
-          }).join(" "),
-          class: "line-mark",
-          stroke: color
-        }));
+        segs.forEach(function (pts) {
+          /* Одинокая точка между разрывами: штриха из одной точки не бывает,
+             без маркера значение стало бы невидимым */
+          if (pts.length === 1) {
+            svg.appendChild(svgEl("circle", {
+              cx: pts[0][0].toFixed(2), cy: pts[0][1].toFixed(2), r: 3.5,
+              fill: color, class: "dot-mark"
+            }));
+            return;
+          }
+          svg.appendChild(svgEl("path", {
+            d: pathOf(pts), class: "line-mark", stroke: color
+          }));
+        });
 
         /* Точка на конце + выборочная прямая подпись последнего значения.
            Число над каждой точкой — это хаос, его не читают. */
-        var last = pts[pts.length - 1];
+        var lastSeg = segs[segs.length - 1];
+        var last = lastSeg[lastSeg.length - 1];
         svg.appendChild(svgEl("circle", {
           cx: last[0].toFixed(2), cy: last[1].toFixed(2), r: 4,
           fill: color, class: "dot-mark"
