@@ -715,6 +715,102 @@
         </div>
       </div>
 
+      <!-- Раздел «24»: затоваривание, возраст запаса, комиссии за хранение.
+           Фильтры периода и витрины на этой странице скрыты (см. navigate):
+           это снимок склада на дату выгрузки, а склад Pan-EU общий. -->
+      <div id="page-ovr24" class="page" hidden>
+
+        <!-- Без узла overstock показывать нечего -->
+        <section class="card" id="ovr-empty" hidden>
+          <div class="empty">
+            <svg class="empty__icon" width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" stroke="currentColor" stroke-width="1.6"
+                stroke-linejoin="round"></path>
+              <path d="M4 7.5l8 4.5 8-4.5M12 12v9" stroke="currentColor" stroke-width="1.6"
+                stroke-linejoin="round"></path>
+            </svg>
+            <div class="empty__title" data-i18n="page.ovr24"></div>
+            <p class="empty__text" data-i18n="ovr.empty"></p>
+          </div>
+        </section>
+
+        <div id="ovr-content" hidden>
+
+          <section class="card" style="margin-bottom:var(--sp-4)">
+            <div class="card__head">
+              <div>
+                <h3 class="card__title" data-i18n="ovr.subtitle"></h3>
+                <div class="card__subtitle" id="ovr-snapshot"></div>
+              </div>
+            </div>
+            <p class="card__caption" id="ovr-caption"></p>
+          </section>
+
+          <section class="grid" aria-labelledby="ovr-kpi-heading" style="margin-bottom:var(--sp-4)">
+            <h2 class="sr-only" id="ovr-kpi-heading" data-i18n="ovr.subtitle"></h2>
+
+            <!-- Ведущее число слева на две строки, четыре мелкие плитки сеткой
+                 2×2 справа — ровно 12 колонок в два ряда. Шестая плитка
+                 осталась бы сиротой в третьем ряду, поэтому оценка хранения
+                 на следующий месяц ушла в подпись прогноза на три месяца. -->
+            <div class="card span-6 rows-2 stat stat--hero" id="ovr-kpi-stock"></div>
+            <div class="card span-3 stat" id="ovr-kpi-inbound"></div>
+            <div class="card span-3 stat" id="ovr-kpi-storage12m"></div>
+            <div class="card span-3 stat" id="ovr-kpi-storage3m"></div>
+            <div class="card span-3 stat" id="ovr-kpi-cross"></div>
+          </section>
+
+          <section class="grid grid--top">
+
+            <!-- Возраст запаса по корзинам дней.
+                 span-4/span-8, а не 5/7: классов .span-5 и .span-7 в app.css нет,
+                 карточка с ними схлопывается в одну колонку из двенадцати. -->
+            <section class="card span-4" id="card-ovr-age">
+              <div class="card__head">
+                <div>
+                  <h3 class="card__title" data-i18n="ovr.age"></h3>
+                  <div class="card__subtitle" data-i18n="ovr.ageCaption"></div>
+                </div>
+              </div>
+              <div class="scroll" id="ovr-age"></div>
+            </section>
+
+            <!-- Кто дойдёт до порога надбавки и когда -->
+            <section class="card span-8" id="card-ovr-cross">
+              <div class="card__head">
+                <div>
+                  <h3 class="card__title" data-i18n="ovr.cross"></h3>
+                  <div class="card__subtitle" data-i18n="ovr.crossCaption"></div>
+                </div>
+              </div>
+              <div class="scroll" id="ovr-cross"></div>
+            </section>
+
+            <!-- Полная таблица позиций -->
+            <section class="card span-12" id="card-ovr-table">
+              <div class="card__head">
+                <div>
+                  <h3 class="card__title" data-i18n="ovr.table"></h3>
+                  <div class="card__subtitle" data-i18n="ovr.tableCaption"></div>
+                </div>
+              </div>
+              <div class="scroll" id="ovr-table"></div>
+            </section>
+
+            <!-- Честный список того, чего в данных нет -->
+            <section class="card span-12" id="card-ovr-gaps">
+              <div class="card__head">
+                <div>
+                  <h3 class="card__title" data-i18n="ovr.gaps"></h3>
+                </div>
+              </div>
+              <ul class="card__caption" id="ovr-gaps"></ul>
+            </section>
+
+          </section>
+        </div>
+      </div>
+
       <!-- Заглушка для разделов, которых ещё нет -->
       <div id="page-placeholder" class="page" hidden>
         <section class="card">

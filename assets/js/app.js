@@ -169,7 +169,8 @@
         { id: "margin", label: "page.margin", icon: "percent", ready: true },
         { id: "cmp4", label: "page.cmp4", icon: "scale", ready: true },
         { id: "p30", label: "page.p30", icon: "chart", ready: true },
-        { id: "sqp20", label: "page.sqp20", icon: "search", ready: true }
+        { id: "sqp20", label: "page.sqp20", icon: "search", ready: true },
+        { id: "ovr24", label: "page.ovr24", icon: "layers", ready: true }
       ]
     },
     {
@@ -237,7 +238,7 @@
     });
   }
 
-  var PAGE_NODES = ["page-sales", "page-overview", "page-margin", "page-cmp4", "page-p30", "page-sqp20", "page-wiki", "page-placeholder"];
+  var PAGE_NODES = ["page-sales", "page-overview", "page-margin", "page-cmp4", "page-p30", "page-sqp20", "page-ovr24", "page-wiki", "page-placeholder"];
 
   function navigate(pageId) {
     var item = findNavItem(pageId);
@@ -254,7 +255,10 @@
     /* Фильтры относятся только к разделам с данными. На заглушке они
        вводили бы в заблуждение — там нечего фильтровать. */
     /* На вики фильтры не нужны: период и витрина к тексту не применяются. */
-    var dataPage = item.ready && state.data && pageId !== "wiki";
+    /* Раздел «24» — снимок склада на дату выгрузки, а не период. Фильтр
+       периода к нему неприменим, а витрину подменять нельзя: в Pan-EU склад
+       общий, и разложить его по витринам без двойного счёта невозможно. */
+    var dataPage = item.ready && state.data && pageId !== "wiki" && pageId !== "ovr24";
     $("filters").hidden = !dataPage;
 
     if (!item.ready) {
@@ -821,6 +825,7 @@
     if (state.page === "cmp4") { renderCompare(); return; }
     if (state.page === "p30") { renderP30(); return; }
     if (state.page === "sqp20") { renderSqp20(); return; }
+    if (state.page === "ovr24") { renderOvr24(); return; }
     renderOverview();
   }
 
@@ -1744,6 +1749,233 @@
     sqpQueryTable($("sqp-fix"), qs.filter(function (q) { return q.group === "fix"; }), "fix");
     sqpQueryTable($("sqp-irrelevant"), qs.filter(function (q) { return q.group === "irrelevant"; }), "irrelevant");
     sqpQueryTable($("sqp-all"), qs, "all");
+  }
+
+  /* ======================================================================
+     Раздел «24» — затоваривание, возраст запаса и хранение
+     ----------------------------------------------------------------------
+     Источник — узел overstock: снимок отчёта FBA Manage Inventory Health,
+     сведённый по складским пулам, себестоимость из Sellerboard и
+     фактические комиссии за хранение из Data Kiosk. Все суммы уже в евро,
+     пересчёт здесь не нужен и делать его нельзя — в узле лежат готовые
+     значения по историческим курсам ЕЦБ.
+
+     Фильтры периода и витрины к странице не применяются намеренно, см.
+     navigate(): это снимок склада на дату выгрузки, а в Pan-EU склад общий
+     и разложить его по витринам без двойного счёта невозможно.
+     ===================================================================== */
+
+  function ovrData() { return (state.data && state.data.overstock) || null; }
+
+  /* Целые единицы товара: дробей тут не бывает, а Fmt.number без второго
+     аргумента как раз округляет до целого. */
+  function ovrUnits(v) { return (v == null) ? "—" : Fmt.number(v, 0); }
+  function ovrEur(v, dec) { return (v == null) ? "—" : Fmt.money(v, "EUR", dec == null ? 0 : dec); }
+
+  function ovrSeasonFactor(o, month) {
+    var list = (o && o.seasonality) || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].month === month) return list[i].factor;
+    }
+    return null;
+  }
+
+  function renderOvr24() {
+    var o = ovrData();
+    var rows = (o && o.rows) || [];
+    var hasData = !!(o && rows.length);
+
+    $("empty-state").hidden = true;
+    $("page-ovr24").hidden = false;
+    $("ovr-empty").hidden = hasData;
+    $("ovr-content").hidden = !hasData;
+    if (!hasData) return;
+
+    var t = o.totals || {};
+
+    $("ovr-snapshot").textContent = T("ovr.snapshot")
+      .replace("{d}", o.snapshotDate || "—")
+      .replace("{m}", (o.marketplaces || []).join(", "));
+
+    $("ovr-caption").textContent = T("ovr.caption")
+      .replace("{w}", String(o.velocityWindowDays || 90))
+      .replace("{t}", String(o.ageThresholdDays || 241))
+      .replace("{c}", String(o.coverageTargetDays || 90));
+
+    /* ---- Плитки показателей ---------------------------------------------
+       Дельт нет намеренно: это снимок на дату, сравнивать не с чем.
+       Метр на плитке-герое — доля запаса на руках в общей сумме вместе
+       с тем, что уже едет на склад: без неё цифра «заморожено» читается
+       так, будто это все обязательства, а половина денег ещё в пути. */
+    var committedValue = (t.stockValue || 0) + (t.inboundValue || 0);
+    renderStat($("ovr-kpi-stock"), {
+      label: T("ovr.kpi.stockValue"),
+      value: ovrEur(t.stockValue),
+      note: T("ovr.kpi.stockValueNote").replace("{n}", ovrUnits(t.onHand)),
+      meter: committedValue > 0
+        ? { value: (t.stockValue || 0) / committedValue, label: T("ovr.kpi.stockValue") }
+        : null,
+      hero: true
+    });
+    renderStat($("ovr-kpi-inbound"), {
+      label: T("ovr.kpi.inboundValue"),
+      value: ovrEur(t.inboundValue),
+      note: T("ovr.kpi.inboundValueNote").replace("{n}", ovrUnits(t.inbound))
+    });
+    renderStat($("ovr-kpi-storage12m"), {
+      label: T("ovr.kpi.storage12m"),
+      value: ovrEur(t.storage12m)
+    });
+    /* Прогноз на три месяца заметно больше утроенной оценки следующего месяца,
+       и это не ошибка: октябрь и ноябрь в этом аккаунте исторически дороже
+       сентября. Поэтому обе величины стоят рядом в одной подписи — иначе
+       трёхмесячная цифра выглядит завышенной. */
+    var oct = ovrSeasonFactor(o, 10);
+    var nov = ovrSeasonFactor(o, 11);
+    renderStat($("ovr-kpi-storage3m"), {
+      label: T("ovr.kpi.storage3m"),
+      value: ovrEur(t.storage3m),
+      note: T("ovr.kpi.storage3mNote")
+        .replace("{s}", ovrEur(t.storageNext))
+        .replace("{o}", oct ? Fmt.number(oct, 2) : "—")
+        .replace("{n}", nov ? Fmt.number(nov, 2) : "—")
+    });
+    renderStat($("ovr-kpi-cross"), {
+      label: T("ovr.kpi.cross"),
+      value: ovrUnits(t.crossUnits),
+      note: T("ovr.kpi.crossNote").replace("{t}", String(o.ageThresholdDays || 241))
+    });
+
+    /* ---- Возраст запаса по корзинам ---- */
+    var ageTotal = (t.age0_90 || 0) + (t.age91_180 || 0) + (t.age181plus || 0);
+    function agePct(v) {
+      return ageTotal > 0 ? Fmt.percent(v / ageTotal, 1) : "—";
+    }
+    global.Charts.table($("ovr-age"), {
+      caption: T("ovr.age"),
+      columns: [
+        { label: T("ovr.age") },
+        { label: T("ovr.col.onHand"), numeric: true },
+        { label: "%", numeric: true }
+      ],
+      rows: [
+        [T("ovr.age0_90"), ovrUnits(t.age0_90), agePct(t.age0_90 || 0)],
+        [T("ovr.age91_180"), ovrUnits(t.age91_180), agePct(t.age91_180 || 0)],
+        [T("ovr.age181plus"), ovrUnits(t.age181plus), agePct(t.age181plus || 0)]
+      ],
+      footRow: [T("ovr.total"), ovrUnits(ageTotal), ageTotal > 0 ? Fmt.percent(1, 1) : "—"]
+    });
+
+    /* ---- Кто дойдёт до порога ----
+       Складываем обе дороги к порогу: единицы, которые уже лежат на складе,
+       и те, что доедут и состарятся там же. Позиция попадает в таблицу,
+       если ненулевая хотя бы одна из них. */
+    var crossing = rows.filter(function (r) {
+      return (r.CrossThreshold || 0) > 0 || (r.CrossInbound || 0) > 0;
+    }).sort(function (a, b) {
+      return ((b.CrossThreshold || 0) + (b.CrossInbound || 0)) -
+             ((a.CrossThreshold || 0) + (a.CrossInbound || 0));
+    });
+
+    var crossNode = $("ovr-cross");
+    crossNode.textContent = "";
+    if (!crossing.length) {
+      crossNode.appendChild(el("p", "card__caption", T("ovr.crossNone")));
+    } else {
+      global.Charts.table(crossNode, {
+        caption: T("ovr.cross"),
+        columns: [
+          { label: T("ovr.col.sku") },
+          { label: T("ovr.col.onHand"), numeric: true },
+          { label: T("ovr.col.velocity"), numeric: true },
+          { label: T("ovr.col.cross"), numeric: true },
+          { label: T("ovr.col.inbound"), numeric: true },
+          { label: T("ovr.col.crossDate") },
+          { label: T("ovr.col.where") }
+        ],
+        rows: crossing.map(function (r) {
+          return [
+            r.SKU,
+            ovrUnits(r.OnHand),
+            r.VelocityDay == null ? "—" : Fmt.number(r.VelocityDay, 2),
+            ovrUnits(r.CrossThreshold),
+            ovrUnits(r.CrossInbound),
+            r.CrossDate || "—",
+            r.Marketplaces || "—"
+          ];
+        })
+      });
+    }
+
+    /* ---- Полная таблица ---- */
+    var sum = { stock: 0, inb: 0, s12: 0, next: 0, s3: 0, rank: 0, onHand: 0, inbUnits: 0 };
+    rows.forEach(function (r) {
+      sum.stock += r.StockValueEur || 0;
+      sum.inb += r.InboundValueEur || 0;
+      sum.s12 += r.Storage12mEur || 0;
+      sum.next += r.StorNextMonth || 0;
+      sum.s3 += r.Storage3mEur || 0;
+      sum.rank += r.RankValue || 0;
+      sum.onHand += r.OnHand || 0;
+      sum.inbUnits += r.Inbound || 0;
+    });
+
+    global.Charts.table($("ovr-table"), {
+      caption: T("ovr.tableSr"),
+      columns: [
+        { label: T("ovr.col.sku") },
+        { label: T("ovr.col.asin") },
+        { label: T("ovr.col.onHand"), numeric: true },
+        { label: T("ovr.col.inbound"), numeric: true },
+        { label: T("ovr.col.velocity"), numeric: true },
+        { label: T("ovr.col.dos"), numeric: true },
+        { label: T("ovr.col.dosInb"), numeric: true },
+        { label: T("ovr.col.excess"), numeric: true },
+        { label: T("ovr.col.cross"), numeric: true },
+        { label: T("ovr.col.crossDate") },
+        { label: T("ovr.col.unitCost"), numeric: true },
+        { label: T("ovr.col.stockValue"), numeric: true },
+        { label: T("ovr.col.storage12m"), numeric: true },
+        { label: T("ovr.col.storageNext"), numeric: true },
+        { label: T("ovr.col.storage3m"), numeric: true },
+        { label: T("ovr.col.rank"), numeric: true }
+      ],
+      rows: rows.map(function (r) {
+        return [
+          r.SKU,
+          r.ASIN,
+          ovrUnits(r.OnHand),
+          ovrUnits(r.Inbound),
+          r.VelocityDay == null ? "—" : Fmt.number(r.VelocityDay, 2),
+          ovrUnits(r.DaysOfSupply),
+          ovrUnits(r.DosWithInbound),
+          ovrUnits(r.ExcessOver90d),
+          ovrUnits(r.CrossThreshold),
+          r.CrossDate || "—",
+          /* Себестоимость показываем с копейками: у мелких товаров она
+             около евро, округление до целого стёрло бы разницу. */
+          r.UnitCostEur == null ? "—" : ovrEur(r.UnitCostEur, 2),
+          ovrEur(r.StockValueEur),
+          ovrEur(r.Storage12mEur),
+          ovrEur(r.StorNextMonth),
+          ovrEur(r.Storage3mEur),
+          ovrEur(r.RankValue)
+        ];
+      }),
+      footRow: [
+        T("ovr.total"), "",
+        ovrUnits(sum.onHand), ovrUnits(sum.inbUnits),
+        "", "", "", "", "", "", "",
+        ovrEur(sum.stock), ovrEur(sum.s12), ovrEur(sum.next), ovrEur(sum.s3), ovrEur(sum.rank)
+      ]
+    });
+
+    /* ---- Пробелы в данных ---- */
+    var gaps = $("ovr-gaps");
+    gaps.textContent = "";
+    (o.gaps || []).forEach(function (g) {
+      gaps.appendChild(el("li", null, g));
+    });
   }
 
   /* ======================================================================
