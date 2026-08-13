@@ -638,6 +638,83 @@
         </div>
       </div>
 
+      <!-- Раздел «20»: поисковые запросы, показы и кликабельность (SQP) -->
+      <div id="page-sqp20" class="page" hidden>
+
+        <!-- Без узла sqp показывать нечего: отчёт требует роли Brand Analytics -->
+        <section class="card" id="sqp-empty" hidden>
+          <div class="empty">
+            <svg class="empty__icon" width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="1.6"></circle>
+              <path d="M20 20l-4.5-4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+            </svg>
+            <div class="empty__title" data-i18n="page.sqp20"></div>
+            <p class="empty__text" data-i18n="sqp.empty"></p>
+          </div>
+        </section>
+
+        <div id="sqp-content" hidden>
+
+          <section class="card" style="margin-bottom:var(--sp-4)">
+            <div class="card__head">
+              <div>
+                <h3 class="card__title" id="sqp-title"></h3>
+                <div class="card__subtitle" id="sqp-range"></div>
+              </div>
+            </div>
+            <p class="card__caption" data-i18n="sqp.caption"></p>
+          </section>
+
+          <section class="grid" aria-labelledby="sqp-kpi-heading" style="margin-bottom:var(--sp-4)">
+            <h2 class="sr-only" id="sqp-kpi-heading" data-i18n="sqp.subtitle"></h2>
+
+            <div class="card span-6 rows-2 stat stat--hero" id="sqp-kpi-ctr"></div>
+            <div class="card span-3 stat" id="sqp-kpi-impressions"></div>
+            <div class="card span-3 stat" id="sqp-kpi-impshare"></div>
+            <div class="card span-3 stat" id="sqp-kpi-clicks"></div>
+            <div class="card span-3 stat" id="sqp-kpi-clickshare"></div>
+            <div class="card span-3 stat" id="sqp-kpi-volume"></div>
+          </section>
+
+          <section class="grid grid--top">
+
+            <!-- Группа A: трафик качественный, слаба карточка -->
+            <section class="card span-12" id="card-sqp-fix">
+              <div class="card__head">
+                <div>
+                  <h3 class="card__title" data-i18n="sqp.fix"></h3>
+                  <div class="card__subtitle" data-i18n="sqp.fixCaption"></div>
+                </div>
+              </div>
+              <div class="scroll" id="sqp-fix"></div>
+            </section>
+
+            <!-- Группа B: показы уходят впустую -->
+            <section class="card span-12" id="card-sqp-irrelevant">
+              <div class="card__head">
+                <div>
+                  <h3 class="card__title" data-i18n="sqp.irrelevant"></h3>
+                  <div class="card__subtitle" data-i18n="sqp.irrelevantCaption"></div>
+                </div>
+              </div>
+              <div class="scroll" id="sqp-irrelevant"></div>
+            </section>
+
+            <!-- Полный список запросов -->
+            <section class="card span-12" id="card-sqp-all">
+              <div class="card__head">
+                <div>
+                  <h3 class="card__title" data-i18n="sqp.all"></h3>
+                  <div class="card__subtitle" data-i18n="sqp.allCaption"></div>
+                </div>
+              </div>
+              <div class="scroll" id="sqp-all"></div>
+            </section>
+
+          </section>
+        </div>
+      </div>
+
       <!-- Заглушка для разделов, которых ещё нет -->
       <div id="page-placeholder" class="page" hidden>
         <section class="card">

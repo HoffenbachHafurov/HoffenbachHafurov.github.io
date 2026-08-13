@@ -10,6 +10,9 @@ sales*.json
 export*.json
 raw*.json
 *-plain.json
+# Данные подключаются тегом <script>, поэтому открытая выгрузка приходит
+# и в виде .js — расширение .json одно дыру не закрывает.
+*-plain.js
 *.credentials
 secrets*
 

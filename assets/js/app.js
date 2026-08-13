@@ -135,6 +135,7 @@
     back: "M4 12a8 8 0 108-8|M4 12l3-3M4 12l3 3",
     book: "M4 5.5A2.5 2.5 0 016.5 3H19v15H6.5A2.5 2.5 0 004 20.5zM19 18v3H6.5",
     scale: "M12 4v16|M5 8h14|M5 8l-2.5 5.5a3 3 0 006 0zM19 8l-2.5 5.5a3 3 0 006 0|M9 20h6",
+    search: "M11 17a6 6 0 100-12 6 6 0 000 12z|M20 20l-4.4-4.4",
     gear: "M12 15a3 3 0 100-6 3 3 0 000 6z|M19 12a7 7 0 00-.1-1.2l2-1.5-2-3.5-2.3 1a7 7 0 00-2-1.2L14.2 3H9.8l-.4 2.6a7 7 0 00-2 1.2l-2.3-1-2 3.5 2 1.5A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.5 2.3-1a7 7 0 002 1.2l.4 2.6h4.4l.4-2.6a7 7 0 002-1.2l2.3 1 2-3.5-2-1.5c.1-.4.1-.8.1-1.2z"
   };
 
@@ -167,7 +168,8 @@
         { id: "overview", label: "page.overview", icon: "grid", ready: true },
         { id: "margin", label: "page.margin", icon: "percent", ready: true },
         { id: "cmp4", label: "page.cmp4", icon: "scale", ready: true },
-        { id: "p30", label: "page.p30", icon: "chart", ready: true }
+        { id: "p30", label: "page.p30", icon: "chart", ready: true },
+        { id: "sqp20", label: "page.sqp20", icon: "search", ready: true }
       ]
     },
     {
@@ -235,7 +237,7 @@
     });
   }
 
-  var PAGE_NODES = ["page-sales", "page-overview", "page-margin", "page-cmp4", "page-p30", "page-wiki", "page-placeholder"];
+  var PAGE_NODES = ["page-sales", "page-overview", "page-margin", "page-cmp4", "page-p30", "page-sqp20", "page-wiki", "page-placeholder"];
 
   function navigate(pageId) {
     var item = findNavItem(pageId);
@@ -818,6 +820,7 @@
     if (state.page === "margin") { renderMargin(); return; }
     if (state.page === "cmp4") { renderCompare(); return; }
     if (state.page === "p30") { renderP30(); return; }
+    if (state.page === "sqp20") { renderSqp20(); return; }
     renderOverview();
   }
 
@@ -1579,6 +1582,168 @@
                 Fmt.money(p.net, currency, 2)];
       })
     });
+  }
+
+  /* ======================================================================
+     Раздел «20» — поисковые запросы (Search Query Performance)
+     ----------------------------------------------------------------------
+     Источник — узел sqp: отчёт Brand Analytics по одному ASIN за неделю.
+     Все метрики и разбиение на группы посчитаны в конвейере
+     (src/SqpCommon.ps1) — здесь только отрисовка. Складывать доли заново
+     на фронтенде нельзя: доли в отчёте уже в процентах, и вторая копия
+     формулы неизбежно разъедется с первой.
+
+     Ключевая величина — ctrIndex = мой CTR / CTR рынка по этому запросу.
+     Она безразмерна и потому сравнима между запросами с долей 0,9 % и 7 %,
+     где разница в процентных пунктах не говорит ни о чём.
+
+     Итоги считаются по ПЕРЕСЕЧЕНИЮ наборов запросов двух недель: отчёт
+     отдаёт топ-100, состав между неделями меняется сильно, и сумма по
+     разным наборам показала бы падение, которого не было.
+     ===================================================================== */
+
+  function sqpData() { return (state.data && state.data.sqp) || null; }
+
+  /* Раздел рассчитан на один ASIN: если их станет несколько, здесь
+     появится переключатель, а пока показываем первый. */
+  function sqpAsin() {
+    var s = sqpData();
+    return (s && s.asins && s.asins.length) ? s.asins[0] : null;
+  }
+
+  function sqpNum(v) { return (v == null || !isFinite(v)) ? "—" : Fmt.number(v); }
+  /* Доли здесь — десятые и сотые процента (0,95 %), округление до целого
+     превратило бы их в «1 %» и стёрло разницу между запросами. */
+  function sqpPct(v) { return (v == null || !isFinite(v)) ? "—" : Fmt.number(v, 2) + " %"; }
+  function sqpIdx(v) { return (v == null || !isFinite(v)) ? "—" : Fmt.number(v, 2); }
+
+  function sqpDeltaCell(v, suffix) {
+    if (v == null || !isFinite(v)) return "—";
+    return (v > 0 ? "+" : "") + Fmt.number(v, 2) + (suffix || "");
+  }
+
+  function sqpQueryTable(node, rows, mode) {
+    node.textContent = "";
+    if (!rows.length) {
+      node.appendChild(el("p", "card__caption", T("sqp.none")));
+      return;
+    }
+    var cur = (sqpAsin() && sqpAsin().queries[0] && sqpAsin().queries[0].currency) || "EUR";
+    var columns = [
+      { label: T("sqp.col.query") },
+      { label: T("sqp.col.volume"), numeric: true },
+      { label: T("sqp.col.impressions"), numeric: true },
+      { label: T("sqp.col.impShare"), numeric: true },
+      { label: T("sqp.col.clicks"), numeric: true },
+      { label: T("sqp.col.clickShare"), numeric: true },
+      { label: T("sqp.col.ctrIndex"), numeric: true },
+      { label: T("sqp.col.marketPrice"), numeric: true },
+      { label: T("sqp.col.myPrice"), numeric: true },
+      { label: T("sqp.col.deltaClickShare"), numeric: true }
+    ];
+    /* В группе «лишние показы» цена роли не играет, зато важно, доходит ли
+       клик до покупки — поэтому там колонка конверсии вместо цен. */
+    if (mode === "irrelevant") {
+      columns[7] = { label: T("sqp.col.buyIndex"), numeric: true };
+      columns.splice(8, 1);
+    }
+    global.Charts.table(node, {
+      caption: T("sqp.tableCaption"),
+      columns: columns,
+      rows: rows.map(function (q) {
+        var base = [
+          q.query,
+          sqpNum(q.searchVolume),
+          sqpNum(q.myImpressions),
+          sqpPct(q.myImpShare),
+          sqpNum(q.myClicks),
+          sqpPct(q.myClickShare),
+          sqpIdx(q.ctrIndex)
+        ];
+        if (mode === "irrelevant") {
+          base.push(sqpIdx(q.buyIndex));
+        } else {
+          base.push(Fmt.money(q.marketClickPrice, q.currency || cur, 2));
+          base.push(Fmt.money(q.myClickPrice, q.currency || cur, 2));
+        }
+        base.push(sqpDeltaCell(q.deltaClickShare, " п.п."));
+        return base;
+      })
+    });
+  }
+
+  function renderSqp20() {
+    var s = sqpData();
+    var a = sqpAsin();
+    var hasData = !!(s && a && a.queries && a.queries.length);
+
+    $("page-sqp20").hidden = false;
+    $("sqp-empty").hidden = hasData;
+    $("sqp-content").hidden = !hasData;
+    if (!hasData) return;
+
+    $("sqp-title").textContent = a.label ? (a.label + " · " + a.asin) : a.asin;
+    $("sqp-range").textContent = s.period.currentFrom + " — " + s.period.currentTo +
+      " · " + (s.marketplaceName || s.marketplaceId);
+
+    var t = a.totals || {};
+    var cur = t.current || {};
+    var prv = t.previous || {};
+
+    /* Дельты долей — разность в процентных пунктах, а не отношение,
+       поэтому подпись задаётся явно через deltaText. */
+    function pts(now, was) {
+      if (now == null || was == null) return null;
+      return now - was;
+    }
+
+    renderStat($("sqp-kpi-ctr"), {
+      label: T("sqp.kpi.ctr"),
+      value: sqpPct(cur.myCtr),
+      delta: pts(cur.myCtr, prv.myCtr),
+      deltaText: sqpDeltaCell(pts(cur.myCtr, prv.myCtr), " п.п."),
+      note: T("sqp.kpi.ctrNote").replace("{x}", sqpPct(cur.marketCtr)),
+      /* Метр — моя доля в кликах рынка по этим запросам: величина заведомо
+         в границах 0..1, в отличие от отношения CTR, которое больше единицы. */
+      meter: (cur.clickShare == null) ? null
+        : { value: cur.clickShare / 100, label: T("sqp.kpi.clickShare") },
+      hero: true
+    });
+    renderStat($("sqp-kpi-impressions"), {
+      label: T("sqp.kpi.impressions"),
+      value: sqpNum(cur.myImpressions),
+      delta: (prv.myImpressions ? (cur.myImpressions - prv.myImpressions) / prv.myImpressions : null)
+    });
+    renderStat($("sqp-kpi-impshare"), {
+      label: T("sqp.kpi.impShare"),
+      value: sqpPct(cur.impShare),
+      delta: pts(cur.impShare, prv.impShare),
+      deltaText: sqpDeltaCell(pts(cur.impShare, prv.impShare), " п.п.")
+    });
+    renderStat($("sqp-kpi-clicks"), {
+      label: T("sqp.kpi.clicks"),
+      value: sqpNum(cur.myClicks),
+      delta: (prv.myClicks ? (cur.myClicks - prv.myClicks) / prv.myClicks : null)
+    });
+    renderStat($("sqp-kpi-clickshare"), {
+      label: T("sqp.kpi.clickShare"),
+      value: sqpPct(cur.clickShare),
+      delta: pts(cur.clickShare, prv.clickShare),
+      deltaText: sqpDeltaCell(pts(cur.clickShare, prv.clickShare), " п.п.")
+    });
+    /* Объём поиска по маркетплейсу целиком, а не моя доля: он показывает
+       масштаб спроса, на фоне которого читаются все остальные числа. */
+    renderStat($("sqp-kpi-volume"), {
+      label: T("sqp.kpi.volume"),
+      value: sqpNum(cur.searchVolume),
+      delta: (prv.searchVolume ? (cur.searchVolume - prv.searchVolume) / prv.searchVolume : null),
+      note: T("sqp.kpi.volumeNote").replace("{n}", String(t.commonQueries || 0))
+    });
+
+    var qs = a.queries || [];
+    sqpQueryTable($("sqp-fix"), qs.filter(function (q) { return q.group === "fix"; }), "fix");
+    sqpQueryTable($("sqp-irrelevant"), qs.filter(function (q) { return q.group === "irrelevant"; }), "irrelevant");
+    sqpQueryTable($("sqp-all"), qs, "all");
   }
 
   /* ======================================================================
