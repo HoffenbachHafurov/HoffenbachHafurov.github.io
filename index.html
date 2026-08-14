@@ -661,6 +661,13 @@
                 <h3 class="card__title" id="sqp-title"></h3>
                 <div class="card__subtitle" id="sqp-range"></div>
               </div>
+              <!-- Переключатель товара здесь, а не в общем ряду фильтров:
+                   он относится только к этому разделу. Отчёт отдаёт топ-100
+                   запросов НА ASIN, поэтому смотреть их можно лишь по одному. -->
+              <div class="filters__group">
+                <label class="field__label" for="sqp-asin" data-i18n="sqp.asinPick"></label>
+                <select class="select" id="sqp-asin"></select>
+              </div>
             </div>
             <p class="card__caption" data-i18n="sqp.caption"></p>
           </section>

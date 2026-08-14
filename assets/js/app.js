@@ -1609,11 +1609,48 @@
 
   function sqpData() { return (state.data && state.data.sqp) || null; }
 
-  /* Раздел рассчитан на один ASIN: если их станет несколько, здесь
-     появится переключатель, а пока показываем первый. */
-  function sqpAsin() {
+  /* Выбранный товар раздела. Раньше здесь жёстко стоял asins[0]: пока ASIN
+     в выгрузке был один, это работало, но с расширенным списком показывало бы
+     первый и молча прятало остальные. */
+  var sqpState = { asin: null };
+
+  function sqpAsinList() {
     var s = sqpData();
-    return (s && s.asins && s.asins.length) ? s.asins[0] : null;
+    return (s && s.asins) ? s.asins : [];
+  }
+
+  function sqpAsin() {
+    var list = sqpAsinList();
+    if (!list.length) return null;
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].asin === sqpState.asin) return list[i];
+    }
+    /* Выбранного ASIN нет в новой выгрузке — откатываемся на первый, иначе
+       раздел опустеет после смены состава товаров. */
+    sqpState.asin = list[0].asin;
+    return list[0];
+  }
+
+  function sqpFillPicker() {
+    var sel = $("sqp-asin");
+    if (!sel) return;
+    var list = sqpAsinList();
+    var current = sqpAsin();
+    sel.textContent = "";
+    list.forEach(function (a) {
+      /* В подписи и название, и ASIN: у вариантов одного товара названия
+         совпадают на первых словах, по ним одно от другого не отличить. */
+      var opt = el("option", null, a.label ? (a.label + " · " + a.asin) : a.asin);
+      opt.value = a.asin;
+      if (current && a.asin === current.asin) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    if (current) sel.value = current.asin;
+    /* Один товар — переключать нечего, выпадающий список только мешал бы. */
+    var single = list.length < 2;
+    sel.hidden = single;
+    var lab = document.querySelector('label[for="sqp-asin"]');
+    if (lab) { lab.hidden = single; }
   }
 
   function sqpNum(v) { return (v == null || !isFinite(v)) ? "—" : Fmt.number(v); }
@@ -1680,12 +1717,17 @@
   function renderSqp20() {
     var s = sqpData();
     var a = sqpAsin();
-    var hasData = !!(s && a && a.queries && a.queries.length);
+    /* Раздел показываем, если в выгрузке есть хоть один товар. Пустая неделя
+       у ВЫБРАННОГО товара — это не «нет данных вообще»: спрятав раздел, мы
+       отняли бы и переключатель, и возможность уйти на другой товар. */
+    var hasData = !!(s && a);
 
     $("page-sqp20").hidden = false;
     $("sqp-empty").hidden = hasData;
     $("sqp-content").hidden = !hasData;
     if (!hasData) return;
+
+    sqpFillPicker();
 
     $("sqp-title").textContent = a.label ? (a.label + " · " + a.asin) : a.asin;
     $("sqp-range").textContent = s.period.currentFrom + " — " + s.period.currentTo +
@@ -2904,6 +2946,16 @@
       var node = $(id);
       if (node) { node.addEventListener("change", onFilterChange); }
     });
+
+    /* Переключатель товара в разделе «20» — местный, общий render() ему не
+       нужен: меняется только этот раздел. */
+    var sqpSel = $("sqp-asin");
+    if (sqpSel) {
+      sqpSel.addEventListener("change", function () {
+        sqpState.asin = sqpSel.value;
+        renderSqp20();
+      });
+    }
     wireTableToggles();
 
     $("menu-toggle").addEventListener("click", function () {

@@ -175,6 +175,7 @@
 
       /* --- Раздел «20»: поисковые запросы --- */
       "page.sqp20": "20",
+      "sqp.asinPick": "Товар",
       "sqp.subtitle": "Неделя против предыдущей недели",
       "sqp.empty": "В выгрузке нет узла sqp. Отчёт Search Query Performance требует роли Brand Analytics и регистрации в Brand Registry.",
       "sqp.caption":
@@ -516,6 +517,7 @@
 
       /* --- Section "20": search queries --- */
       "page.sqp20": "20",
+      "sqp.asinPick": "Product",
       "sqp.subtitle": "Week against the previous week",
       "sqp.empty": "The payload has no sqp node. The Search Query Performance report requires the Brand Analytics role and Brand Registry enrollment.",
       "sqp.caption":
@@ -857,6 +859,7 @@
 
       /* --- Розділ «20»: пошукові запити --- */
       "page.sqp20": "20",
+      "sqp.asinPick": "Товар",
       "sqp.subtitle": "Тиждень проти попереднього тижня",
       "sqp.empty": "У вивантаженні немає вузла sqp. Звіт Search Query Performance потребує ролі Brand Analytics і реєстрації в Brand Registry.",
       "sqp.caption":
