@@ -1,7 +1,7 @@
 /* Журнал синхронизаций. Собирается автоматически, руками не править. */
 window.DASHBOARD_RUNS = {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-13T23:49:43Z",
+  "updatedAt": "2026-08-14T06:12:35Z",
   "integrations": [
     {
       "id": "amazon-economics",
@@ -12,6 +12,79 @@ window.DASHBOARD_RUNS = {
     }
   ],
   "runs": [
+    {
+      "id": "31774161163",
+      "integration": "amazon-economics",
+      "trigger": "schedule",
+      "status": "success",
+      "startedAt": "2026-08-14T05:48:16Z",
+      "finishedAt": "2026-08-14T06:12:35Z",
+      "durationSec": 1459,
+      "period": {
+        "from": "2026-01-01",
+        "to": "2026-08-13"
+      },
+      "coverage": {
+        "expectedDays": 225,
+        "coveredDays": 225,
+        "percent": 100.0,
+        "rows": 2475,
+        "feeRows": 11780,
+        "productRows": 20691
+      },
+      "steps": [
+        {
+          "name": "Выгрузка экономики из Amazon",
+          "status": "success",
+          "durationSec": 1314,
+          "detail": "141 075 строк, 81 МБ"
+        },
+        {
+          "name": "Сборка данных дашборда",
+          "status": "success",
+          "durationSec": 36,
+          "detail": "5,5 МБ"
+        },
+        {
+          "name": "База знаний в payload",
+          "status": "success",
+          "durationSec": 0,
+          "detail": "6,0 МБ"
+        },
+        {
+          "name": "Данные маржи в payload",
+          "status": "success",
+          "durationSec": 34,
+          "detail": "7,1 МБ"
+        },
+        {
+          "name": "Поисковые запросы в payload",
+          "status": "success",
+          "durationSec": 57,
+          "detail": "7,1 МБ"
+        },
+        {
+          "name": "Данные по запасам FBA",
+          "status": "failed",
+          "durationSec": 0,
+          "detail": "Exception calling \"ReadAllLines\" with \"1\" argument(s): \"Could not find file '/home/runner/work/amazon-sp-api-integration/amazon-sp-api-integration/pipeline/.env'.\""
+        },
+        {
+          "name": "Запасы в payload",
+          "status": "failed",
+          "durationSec": 0,
+          "detail": "Нет узла overstock: /home/runner/work/amazon-sp-api-integration/amazon-sp-api-integration/pipeline/.cache/overstock.json — сначала запустите src/Find-OverstockedSkus.ps1"
+        },
+        {
+          "name": "Шифрование файла данных",
+          "status": "success",
+          "durationSec": 2,
+          "detail": "1 206 КБ"
+        }
+      ],
+      "error": null,
+      "runUrl": "https://github.com/HoffenbachHafurov/amazon-sp-api-integration/actions/runs/31774161163"
+    },
     {
       "id": "31754325394",
       "integration": "amazon-economics",
