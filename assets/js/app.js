@@ -1822,9 +1822,19 @@
       value: ovrEur(t.inboundValue),
       note: T("ovr.kpi.inboundValueNote").replace("{n}", ovrUnits(t.inbound))
     });
+    /* Подпись — фактически покрытый период, а не «12 месяцев»: глубина
+       начислений ограничена окном выгрузки экономики, и в конвейере оно
+       начинается с 1 января. Писать «за 12 мес» над суммой за семь было бы
+       враньём, причём незаметным. */
     renderStat($("ovr-kpi-storage12m"), {
       label: T("ovr.kpi.storage12m"),
-      value: ovrEur(t.storage12m)
+      value: ovrEur(t.storage12m),
+      note: (o.storageFrom && o.storageTo)
+        ? T("ovr.kpi.storagePastNote")
+            .replace("{from}", o.storageFrom)
+            .replace("{to}", o.storageTo)
+            .replace("{n}", String(o.storageMonths || 0))
+        : null
     });
     /* Прогноз на три месяца заметно больше утроенной оценки следующего месяца,
        и это не ошибка: октябрь и ноябрь в этом аккаунте исторически дороже
@@ -1832,13 +1842,19 @@
        трёхмесячная цифра выглядит завышенной. */
     var oct = ovrSeasonFactor(o, 10);
     var nov = ovrSeasonFactor(o, 11);
+    /* Коэффициент 1,00 означает «поправку посчитать было не из чего», а не
+       «сезонности нет». Показывать его как измеренную величину нельзя —
+       читается как факт, хотя это отсутствие данных. */
+    var seasonKnown = (oct && nov && (oct !== 1 || nov !== 1));
     renderStat($("ovr-kpi-storage3m"), {
       label: T("ovr.kpi.storage3m"),
       value: ovrEur(t.storage3m),
-      note: T("ovr.kpi.storage3mNote")
-        .replace("{s}", ovrEur(t.storageNext))
-        .replace("{o}", oct ? Fmt.number(oct, 2) : "—")
-        .replace("{n}", nov ? Fmt.number(nov, 2) : "—")
+      note: seasonKnown
+        ? T("ovr.kpi.storage3mNote")
+            .replace("{s}", ovrEur(t.storageNext))
+            .replace("{o}", Fmt.number(oct, 2))
+            .replace("{n}", Fmt.number(nov, 2))
+        : T("ovr.kpi.noSeason").replace("{s}", ovrEur(t.storageNext))
     });
     renderStat($("ovr-kpi-cross"), {
       label: T("ovr.kpi.cross"),
