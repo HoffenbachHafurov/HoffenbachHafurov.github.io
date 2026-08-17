@@ -869,15 +869,19 @@
           <section class="grid" aria-labelledby="geo-kpi-heading" style="margin-bottom:var(--sp-4)">
             <h2 class="sr-only" id="geo-kpi-heading" data-i18n="geo.subtitle"></h2>
 
-            <!-- Ведущая цифра — сумма с НДС: это то, что заплатили покупатели.
-                 Сумма без НДС стоит отдельной плиткой, а не подменяет её:
-                 ставка налога у страны получателя своя, разница между двумя
-                 числами доходит до четверти суммы. Подменять молча нельзя. -->
-            <div class="card span-6 rows-2 stat stat--hero" id="geo-kpi-gross"></div>
+            <!-- Герой — прибыль: ради неё раздел и расширяли. Сумма с НДС,
+                 нетто, штуки и заказы стоят рядом плитками; нижний ряд —
+                 четыре статьи расходов, из которых прибыль и сложилась.
+                 Ровно 12 колонок в каждом ряду: (6+3+3) x2 и (3+3+3+3). -->
+            <div class="card span-6 rows-2 stat stat--hero" id="geo-kpi-profit"></div>
+            <div class="card span-3 stat" id="geo-kpi-gross"></div>
+            <div class="card span-3 stat" id="geo-kpi-netrev"></div>
             <div class="card span-3 stat" id="geo-kpi-units"></div>
-            <div class="card span-3 stat" id="geo-kpi-net"></div>
             <div class="card span-3 stat" id="geo-kpi-orders"></div>
-            <div class="card span-3 stat" id="geo-kpi-avg"></div>
+            <div class="card span-3 stat" id="geo-kpi-refunds"></div>
+            <div class="card span-3 stat" id="geo-kpi-fees"></div>
+            <div class="card span-3 stat" id="geo-kpi-ads"></div>
+            <div class="card span-3 stat" id="geo-kpi-cogs"></div>
           </section>
 
           <section class="grid grid--top">
@@ -909,6 +913,7 @@
                         aria-pressed="false" data-i18n="table.show"></button>
               </div>
               <div class="chart" id="chart-geo-trend"></div>
+              <div id="legend-geo-trend"></div>
               <div id="table-geo-trend" hidden></div>
               <p class="card__caption" data-i18n="geo.trendCaption"></p>
             </figure>

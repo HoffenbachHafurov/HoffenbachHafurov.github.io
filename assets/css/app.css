@@ -1608,7 +1608,7 @@ table.data tr.margin-other td {
    подрезается только показ.
    ------------------------------------------------------------------------ */
 #geo-products table.data td:first-child {
-  max-width: 30rem;
+  max-width: 20rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

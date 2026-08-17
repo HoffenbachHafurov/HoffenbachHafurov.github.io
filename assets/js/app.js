@@ -2046,12 +2046,21 @@
      Раздел «Страны доставки»
      ----------------------------------------------------------------------
      Единственный разрез, которого в Data Kiosk нет вообще: страна
-     ПОЛУЧАТЕЛЯ. Источник — Orders Report (ship-country); узел собирает
-     src/Export-CountrySales.ps1, вкладывает Add-CountriesToPayload.ps1.
+     ПОЛУЧАТЕЛЯ. Выручка и штуки — точные, из Orders Report (ship-country);
+     узел собирает src/Export-CountrySales.ps1, вкладывает
+     Add-CountriesToPayload.ps1.
+
+     Экономика в этом разрезе у Amazon не существует: комиссии, реклама и
+     возвраты приходят по витрине и товару. Узел разносит их по доле штук
+     товара, уехавшей в страну (с поправкой FBA-ставки на направление,
+     измеренной по расчётам), себестоимость берёт точно — по закупочной
+     цене на дату продажи. Прибыль посчитана в узле той же формулой, что
+     в marginCalc: netRevenue − refunds − fees − ads − cogs, без подписки.
+     Здесь она ТОЛЬКО отображается — вторая копия формулы разъехалась бы
+     с первой при первом же изменении.
 
      Не путать с разделом «Маржа»: там страна — это витрина, то есть где
-     оформлен заказ. Покупка на витрине одной страны с доставкой в соседнюю
-     в марже лежит внутри этой витрины.
+     оформлен заказ, а не куда уехала посылка.
 
      Период узла зафиксирован при выгрузке и общему фильтру НЕ подчиняется:
      нарисовать «за 30 дней» поверх полугодового среза значило бы соврать.
@@ -2076,6 +2085,7 @@
     return (v == null || !isFinite(v)) ? "—" : Fmt.money(v, "EUR", dec == null ? 2 : dec);
   }
   function geoUnits(v) { return (v == null || !isFinite(v)) ? "—" : Fmt.number(v, 0); }
+  function geoMargin(v) { return (v == null || !isFinite(v)) ? "—" : Fmt.percent(v, 1); }
 
   function geoName(entry) {
     var n = (entry && entry.name) || {};
@@ -2139,7 +2149,9 @@
   }
 
   /* Помесячно. Для всех стран строки складываются по месяцу; один заказ
-     не может уехать в две страны, поэтому двойного счёта заказов нет. */
+     не может уехать в две страны, поэтому двойного счёта заказов нет.
+     Прибыль суммируется только когда она есть у всех слагаемых —
+     null + число дало бы число, выглядящее как полная прибыль месяца. */
   function geoScopeMonths() {
     var g = geoData();
     var src = (g && g.months) || [];
@@ -2153,15 +2165,26 @@
       if (!b) {
         b = byMonth[m.month] = {
           month: m.month, units: 0, orders: 0, gross: 0, net: 0,
-          days: m.days, monthDays: m.monthDays
+          netRevenue: 0, refunds: 0, fees: 0, ads: 0, cogs: 0, profit: 0,
+          profitKnown: true, days: m.days, monthDays: m.monthDays
         };
       }
       b.units += m.units || 0;
       b.orders += m.orders || 0;
       b.gross += m.gross || 0;
       b.net += m.net || 0;
+      b.netRevenue += m.netRevenue || 0;
+      b.refunds += m.refunds || 0;
+      b.fees += m.fees || 0;
+      b.ads += m.ads || 0;
+      if (m.profit == null || m.cogs == null) { b.profitKnown = false; }
+      else { b.cogs += m.cogs; b.profit += m.profit; }
     });
-    return Object.keys(byMonth).sort().map(function (k) { return byMonth[k]; });
+    return Object.keys(byMonth).sort().map(function (k) {
+      var b = byMonth[k];
+      if (!b.profitKnown) { b.cogs = null; b.profit = null; }
+      return b;
+    });
   }
 
   function geoFillPicker() {
@@ -2212,39 +2235,75 @@
 
     /* ---- Плитки показателей ---------------------------------------------
        Дельт нет намеренно: период задан выгрузкой, сравнивать его не с чем.
-       Метр на плитке-герое — доля выбранной страны среди всех; при выборе
-       всех стран он не нужен, там доля равна единице по построению. */
+       Герой — прибыль; метр на нём — маржа от выручки нетто. Узел отдаёт
+       прибыль готовой, здесь только показ. */
+    var netRev = totals.netRevenue || 0;
+    function pctOfNet(v) {
+      return netRev > 0 ? Fmt.percent((v || 0) / netRev, 1) : "—";
+    }
+
+    renderStat($("geo-kpi-profit"), {
+      label: T("geo.kpi.profit"),
+      value: geoEur(totals.profit),
+      note: (totals.profit == null)
+        ? T("geo.kpi.profitNoCogs")
+        : T("geo.kpi.profitNote").replace("{m}", geoMargin(totals.margin)),
+      meter: (totals.margin != null && totals.margin > 0)
+        ? { value: totals.margin, label: T("geo.kpi.marginMeter") }
+        : null,
+      hero: true
+    });
+
+    var grossNote = T("geo.kpi.grossNote");
+    if (geoState.country && all.gross > 0) {
+      grossNote += " · " + T("geo.kpi.grossShare")
+        .replace("{p}", Fmt.percent((totals.gross || 0) / all.gross, 1));
+    }
     renderStat($("geo-kpi-gross"), {
       label: T("geo.kpi.gross"),
       value: geoEur(totals.gross),
-      note: T("geo.kpi.grossNote"),
-      meter: (geoState.country && all.gross > 0)
-        ? { value: (totals.gross || 0) / all.gross, label: T("geo.kpi.shareOfAll") }
-        : null,
-      hero: true
+      note: grossNote
+    });
+    renderStat($("geo-kpi-netrev"), {
+      label: T("geo.kpi.netRev"),
+      value: geoEur(totals.netRevenue),
+      note: T("geo.kpi.netRevNote")
+        .replace("{v}", geoEur(totals.vat))
+        .replace("{p}", geoEur(totals.promo))
     });
     renderStat($("geo-kpi-units"), {
       label: T("geo.kpi.units"),
       value: geoUnits(totals.units),
       note: T("geo.kpi.unitsNote")
     });
-    renderStat($("geo-kpi-net"), {
-      label: T("geo.kpi.net"),
-      value: geoEur(totals.net),
-      note: T("geo.kpi.netNote").replace("{v}", geoEur(totals.vat))
-    });
+    /* Средний чек делим на заказы, а не на позиции: в одном заказе бывает
+       несколько строк, и деление на строки занизило бы цифру. */
     renderStat($("geo-kpi-orders"), {
       label: T("geo.kpi.orders"),
       value: geoUnits(totals.orders),
-      note: T("geo.kpi.ordersNote")
+      note: (totals.orders > 0)
+        ? T("geo.kpi.ordersNote").replace("{v}", geoEur((totals.gross || 0) / totals.orders))
+        : null
     });
-    /* Средний чек делим на заказы, а не на позиции: в одном заказе бывает
-       несколько строк, и деление на строки занизило бы цифру. */
-    var avg = (totals.orders > 0) ? (totals.gross || 0) / totals.orders : null;
-    renderStat($("geo-kpi-avg"), {
-      label: T("geo.kpi.avg"),
-      value: geoEur(avg),
-      note: T("geo.kpi.avgNote")
+    renderStat($("geo-kpi-refunds"), {
+      label: T("geo.kpi.refunds"),
+      value: geoEur(totals.refunds),
+      note: T("geo.kpi.refundsNote").replace("{n}", geoUnits(totals.refundUnits))
+    });
+    renderStat($("geo-kpi-fees"), {
+      label: T("geo.kpi.fees"),
+      value: geoEur(totals.fees),
+      note: T("geo.kpi.feesNote").replace("{p}", pctOfNet(totals.fees))
+    });
+    renderStat($("geo-kpi-ads"), {
+      label: T("geo.kpi.ads"),
+      value: geoEur(totals.ads),
+      note: T("geo.kpi.adsNote").replace("{p}", pctOfNet(totals.ads))
+    });
+    renderStat($("geo-kpi-cogs"), {
+      label: T("geo.kpi.cogs"),
+      value: geoEur(totals.cogs),
+      note: T("geo.kpi.cogsNote")
     });
 
     /* ---- Продажи по странам ---------------------------------------------
@@ -2264,6 +2323,8 @@
         { label: T("geo.col.country") },
         { label: T("geo.col.units"), numeric: true },
         { label: T("geo.col.gross"), numeric: true },
+        { label: T("geo.col.profit"), numeric: true },
+        { label: T("geo.col.margin"), numeric: true },
         { label: T("table.share"), numeric: true }
       ],
       rows: list.map(function (c) {
@@ -2271,20 +2332,18 @@
           geoName(c) + " (" + c.code + ")",
           geoUnits(c.units),
           geoEur(c.gross),
+          geoEur(c.profit),
+          geoMargin(c.margin),
           allGross > 0 ? Fmt.percent((c.gross || 0) / allGross, 1) : "—"
         ];
       }),
-      footRow: [T("table.total"), geoUnits(all.units), geoEur(all.gross), ""]
+      footRow: [T("table.total"), geoUnits(all.units), geoEur(all.gross), geoEur(all.profit), geoMargin(all.margin), ""]
     });
 
     /* ---- Помесячная динамика --------------------------------------------
-       На графике только деньги. Штуки — другая единица измерения, а вторая
-       ось Y ради них запрещена методичкой; они лежат в табличном двойнике. */
+       Выручка нетто и прибыль — обе в евро, поэтому одна шкала и никакой
+       второй оси. Штуки — другая единица, они в табличном двойнике. */
     var months = geoScopeMonths();
-    /* Неполный месяц уводит линию в пол: срез до 1 июля даёт в июле
-       один день из тридцати одного. На графике его не показываем —
-       подпись рядом не спасает, картинку читают быстрее текста.
-       В таблице и в итогах он есть, просто помечен звёздочкой. */
     var partial = months.filter(geoMonthPartial);
     var chartMonths = months.filter(function (m) { return !geoMonthPartial(m); });
     $("geo-trend-scope").textContent = geoScopeLabel() + (partial.length
@@ -2294,10 +2353,17 @@
       : "");
     global.Charts.line($("chart-geo-trend"), {
       labels: chartMonths.map(function (m) { return m.month; }),
-      series: [{
-        name: T("geo.col.gross"),
-        values: chartMonths.map(function (m) { return m.gross || 0; })
-      }],
+      series: [
+        {
+          name: T("geo.col.netRev"),
+          values: chartMonths.map(function (m) { return m.netRevenue || 0; })
+        },
+        {
+          name: T("geo.col.profit"),
+          values: chartMonths.map(function (m) { return m.profit == null ? 0 : m.profit; }),
+          color: "var(--series-3)"
+        }
+      ],
       formatY: function (v, axis) {
         return axis ? Fmt.moneyCompact(v, "EUR") : Fmt.money(v, "EUR", 2);
       },
@@ -2305,72 +2371,90 @@
       ariaLabel: T("geo.trend"),
       height: 220
     });
+    global.Charts.legend($("legend-geo-trend"), [
+      { label: T("geo.col.netRev") },
+      { label: T("geo.col.profit"), color: "var(--series-3)" }
+    ], "line");
     global.Charts.table($("table-geo-trend"), {
       caption: T("geo.trend"),
       columns: [
         { label: T("geo.col.month") },
         { label: T("geo.col.units"), numeric: true },
-        { label: T("geo.col.gross"), numeric: true },
-        { label: T("geo.col.net"), numeric: true }
+        { label: T("geo.col.netRev"), numeric: true },
+        { label: T("geo.col.profit"), numeric: true }
       ],
       rows: months.map(function (m) {
         return [
           geoMonthLabel(m.month, true) + (geoMonthPartial(m) ? " *" : ""),
-          geoUnits(m.units), geoEur(m.gross), geoEur(m.net)
+          geoUnits(m.units), geoEur(m.netRevenue), geoEur(m.profit)
         ];
       }),
       footRow: [
         T("table.total"),
         geoUnits(months.reduce(function (s, m) { return s + (m.units || 0); }, 0)),
-        geoEur(months.reduce(function (s, m) { return s + (m.gross || 0); }, 0)),
-        geoEur(months.reduce(function (s, m) { return s + (m.net || 0); }, 0))
+        geoEur(months.reduce(function (s, m) { return s + (m.netRevenue || 0); }, 0)),
+        geoEur(totals.profit)
       ]
     });
 
-    /* ---- Товары ----------------------------------------------------------
-       Главная таблица раздела. Название — то, на которое пришлось больше
-       всего проданных единиц: один ASIN на Amazon.es и Amazon.de называется
-       по-разному, и без канонизации подпись строки менялась бы при
-       переключении страны. */
+    /* ---- Товары: полная экономика ---------------------------------------
+       Каждая строка сходится арифметически: нетто − возвраты − комиссии −
+       реклама − себестоимость = прибыль (узел округляет слагаемые до
+       копейки именно ради этого). Название — то, на которое пришлось
+       больше всего проданных единиц: один ASIN на Amazon.es и Amazon.de
+       называется по-разному. */
     var products = geoScopeProducts();
-    var scopeGross = totals.gross || 0;
     global.Charts.table($("geo-products"), {
       caption: T("geo.products"),
       columns: [
         { label: T("geo.col.product") },
         { label: T("geo.col.asin") },
         { label: T("geo.col.units"), numeric: true },
-        { label: T("geo.col.orders"), numeric: true },
         { label: T("geo.col.gross"), numeric: true },
-        { label: T("geo.col.net"), numeric: true },
-        { label: T("table.share"), numeric: true }
+        { label: T("geo.col.netRev"), numeric: true },
+        { label: T("geo.col.refunds"), numeric: true },
+        { label: T("geo.col.fees"), numeric: true },
+        { label: T("geo.col.ads"), numeric: true },
+        { label: T("geo.col.cogs"), numeric: true },
+        { label: T("geo.col.profit"), numeric: true },
+        { label: T("geo.col.margin"), numeric: true }
       ],
       rows: products.map(function (p) {
         return [
           p.title || "—",
           p.asin,
           geoUnits(p.units),
-          geoUnits(p.orders),
           geoEur(p.gross),
-          geoEur(p.net),
-          scopeGross > 0 ? Fmt.percent((p.gross || 0) / scopeGross, 1) : "—"
+          geoEur(p.netRevenue),
+          geoEur(p.refunds),
+          geoEur(p.fees),
+          geoEur(p.ads),
+          geoEur(p.cogs),
+          geoEur(p.profit),
+          geoMargin(p.margin)
         ];
       }),
       footRow: [
         T("table.total"), "",
         geoUnits(totals.units),
-        geoUnits(totals.orders),
         geoEur(totals.gross),
-        geoEur(totals.net),
-        ""
+        geoEur(totals.netRevenue),
+        geoEur(totals.refunds),
+        geoEur(totals.fees),
+        geoEur(totals.ads),
+        geoEur(totals.cogs),
+        geoEur(totals.profit),
+        geoMargin(totals.margin)
       ]
     });
 
-    /* ---- Чего в этих цифрах нет ------------------------------------------
-       Список постоянный: это ограничения источника, а не состояние выгрузки. */
+    /* ---- Как это посчитано и чего тут нет --------------------------------
+       Список постоянный: это метод и ограничения источников, а не состояние
+       выгрузки. Прибыль по модели разнесения обязана про это говорить. */
     var gaps = $("geo-gaps");
     gaps.textContent = "";
-    ["geo.gap.returns", "geo.gap.tz", "geo.gap.fees", "geo.gap.storefront"].forEach(function (k) {
+    ["geo.gap.method", "geo.gap.fba", "geo.gap.refundDate", "geo.gap.subs",
+     "geo.gap.tz", "geo.gap.storefront"].forEach(function (k) {
       gaps.appendChild(el("li", null, T(k)));
     });
   }
