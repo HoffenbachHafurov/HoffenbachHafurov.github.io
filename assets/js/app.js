@@ -136,6 +136,7 @@
     book: "M4 5.5A2.5 2.5 0 016.5 3H19v15H6.5A2.5 2.5 0 004 20.5zM19 18v3H6.5",
     scale: "M12 4v16|M5 8h14|M5 8l-2.5 5.5a3 3 0 006 0zM19 8l-2.5 5.5a3 3 0 006 0|M9 20h6",
     search: "M11 17a6 6 0 100-12 6 6 0 000 12z|M20 20l-4.4-4.4",
+    globe: "M12 21a9 9 0 100-18 9 9 0 000 18z|M3.5 9h17M3.5 15h17|M12 3c2.5 2.4 3.8 5.4 3.8 9s-1.3 6.6-3.8 9c-2.5-2.4-3.8-5.4-3.8-9S9.5 5.4 12 3z",
     gear: "M12 15a3 3 0 100-6 3 3 0 000 6z|M19 12a7 7 0 00-.1-1.2l2-1.5-2-3.5-2.3 1a7 7 0 00-2-1.2L14.2 3H9.8l-.4 2.6a7 7 0 00-2 1.2l-2.3-1-2 3.5 2 1.5A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.5 2.3-1a7 7 0 002 1.2l.4 2.6h4.4l.4-2.6a7 7 0 002-1.2l2.3 1 2-3.5-2-1.5c.1-.4.1-.8.1-1.2z"
   };
 
@@ -170,7 +171,8 @@
         { id: "cmp4", label: "page.cmp4", icon: "scale", ready: true },
         { id: "p30", label: "page.p30", icon: "chart", ready: true },
         { id: "sqp20", label: "page.sqp20", icon: "search", ready: true },
-        { id: "ovr24", label: "page.ovr24", icon: "layers", ready: true }
+        { id: "ovr24", label: "page.ovr24", icon: "layers", ready: true },
+        { id: "geo", label: "page.geo", icon: "globe", ready: true }
       ]
     },
     {
@@ -238,7 +240,7 @@
     });
   }
 
-  var PAGE_NODES = ["page-sales", "page-overview", "page-margin", "page-cmp4", "page-p30", "page-sqp20", "page-ovr24", "page-wiki", "page-placeholder"];
+  var PAGE_NODES = ["page-sales", "page-overview", "page-margin", "page-cmp4", "page-p30", "page-sqp20", "page-ovr24", "page-geo", "page-wiki", "page-placeholder"];
 
   function navigate(pageId) {
     var item = findNavItem(pageId);
@@ -258,7 +260,10 @@
     /* Раздел «24» — снимок склада на дату выгрузки, а не период. Фильтр
        периода к нему неприменим, а витрину подменять нельзя: в Pan-EU склад
        общий, и разложить его по витринам без двойного счёта невозможно. */
-    var dataPage = item.ready && state.data && pageId !== "wiki" && pageId !== "ovr24";
+    /* Раздел «Страны доставки» — срез за период, зафиксированный при
+       выгрузке Orders Report. Общий фильтр периода к нему неприменим:
+       он переключал бы подпись, не трогая цифры. */
+    var dataPage = item.ready && state.data && pageId !== "wiki" && pageId !== "ovr24" && pageId !== "geo";
     $("filters").hidden = !dataPage;
 
     if (!item.ready) {
@@ -826,6 +831,7 @@
     if (state.page === "p30") { renderP30(); return; }
     if (state.page === "sqp20") { renderSqp20(); return; }
     if (state.page === "ovr24") { renderOvr24(); return; }
+    if (state.page === "geo") { renderGeo(); return; }
     renderOverview();
   }
 
@@ -2037,6 +2043,339 @@
   }
 
   /* ======================================================================
+     Раздел «Страны доставки»
+     ----------------------------------------------------------------------
+     Единственный разрез, которого в Data Kiosk нет вообще: страна
+     ПОЛУЧАТЕЛЯ. Источник — Orders Report (ship-country); узел собирает
+     src/Export-CountrySales.ps1, вкладывает Add-CountriesToPayload.ps1.
+
+     Не путать с разделом «Маржа»: там страна — это витрина, то есть где
+     оформлен заказ. Покупка на витрине одной страны с доставкой в соседнюю
+     в марже лежит внутри этой витрины.
+
+     Период узла зафиксирован при выгрузке и общему фильтру НЕ подчиняется:
+     нарисовать «за 30 дней» поверх полугодового среза значило бы соврать.
+     Поэтому фильтры на странице скрыты (см. navigate), а период написан
+     в подзаголовке.
+
+     Все суммы в евро без пересчёта: страны без собственной витрины Amazon
+     обслуживаются еврозонными витринами, и в отчёте там только EUR. Если
+     однажды придёт другая валюта, выгрузка упадёт на проверке в
+     Export-CountrySales.ps1 — молча сложить разные валюты здесь нельзя.
+     ===================================================================== */
+
+  function geoData() { return (state.data && state.data.countries) || null; }
+
+  /* Пустая строка — все страны разом. Живёт вне state: это местный выбор
+     раздела, общий фильтр витрин отвечает за другое. */
+  var geoState = { country: "" };
+
+  function geoList() { var g = geoData(); return (g && g.countries) || []; }
+
+  function geoEur(v, dec) {
+    return (v == null || !isFinite(v)) ? "—" : Fmt.money(v, "EUR", dec == null ? 2 : dec);
+  }
+  function geoUnits(v) { return (v == null || !isFinite(v)) ? "—" : Fmt.number(v, 0); }
+
+  function geoName(entry) {
+    var n = (entry && entry.name) || {};
+    return n[global.I18N.getLang()] || n.ru || (entry && entry.code) || "—";
+  }
+
+  function geoNameByCode(code) {
+    var list = geoList();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].code === code) return geoName(list[i]);
+    }
+    return code;
+  }
+
+  /* Подпись выбранного среза: либо одна страна, либо все сразу */
+  function geoScopeLabel() {
+    if (!geoState.country) {
+      return T("geo.allCountries").replace("{n}", String(geoList().length));
+    }
+    return geoNameByCode(geoState.country) + " (" + geoState.country + ")";
+  }
+
+  function geoMonthLabel(m, full) {
+    var d = new Date(String(m) + "-01T00:00:00Z");
+    if (isNaN(d.getTime())) return String(m);
+    try {
+      return new Intl.DateTimeFormat(global.I18N.locale(), {
+        month: full ? "long" : "short", year: "numeric", timeZone: "UTC"
+      }).format(d);
+    } catch (e) { return String(m); }
+  }
+
+  /* Последний месяц периода почти всегда обрезан его концом: срез до
+     1 июля даёт в июле один день. Без пометки провал на графике
+     читался бы как обвал продаж, а не как «месяц ещё не кончился». */
+  function geoMonthPartial(m) {
+    return !!(m && m.monthDays && m.days && m.days < m.monthDays);
+  }
+
+  /* Итоги выбранного среза. Для всех стран берём готовый узел totals,
+     а не складываем строки заново: одна формула — одно место. */
+  function geoScopeTotals() {
+    var g = geoData();
+    if (!g) return null;
+    if (!geoState.country) return g.totals || null;
+    var list = geoList();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].code === geoState.country) return list[i];
+    }
+    return null;
+  }
+
+  /* Товары среза. Для всех стран это готовый byAsin: там один ASIN — одна
+     строка, тогда как в products тот же ASIN лежит по разу на страну, и
+     склеивать их здесь заново значило бы завести вторую копию агрегации. */
+  function geoScopeProducts() {
+    var g = geoData();
+    if (!g) return [];
+    if (!geoState.country) return (g.byAsin || []).slice();
+    return (g.products || []).filter(function (p) { return p.country === geoState.country; });
+  }
+
+  /* Помесячно. Для всех стран строки складываются по месяцу; один заказ
+     не может уехать в две страны, поэтому двойного счёта заказов нет. */
+  function geoScopeMonths() {
+    var g = geoData();
+    var src = (g && g.months) || [];
+    if (geoState.country) {
+      return src.filter(function (m) { return m.country === geoState.country; })
+                .sort(function (a, b) { return a.month < b.month ? -1 : 1; });
+    }
+    var byMonth = {};
+    src.forEach(function (m) {
+      var b = byMonth[m.month];
+      if (!b) {
+        b = byMonth[m.month] = {
+          month: m.month, units: 0, orders: 0, gross: 0, net: 0,
+          days: m.days, monthDays: m.monthDays
+        };
+      }
+      b.units += m.units || 0;
+      b.orders += m.orders || 0;
+      b.gross += m.gross || 0;
+      b.net += m.net || 0;
+    });
+    return Object.keys(byMonth).sort().map(function (k) { return byMonth[k]; });
+  }
+
+  function geoFillPicker() {
+    var sel = $("geo-country");
+    if (!sel) return;
+    sel.textContent = "";
+    var all = el("option", null, T("geo.allCountries").replace("{n}", String(geoList().length)));
+    all.value = "";
+    sel.appendChild(all);
+    geoList().forEach(function (c) {
+      var opt = el("option", null, geoName(c) + " · " + c.code);
+      opt.value = c.code;
+      sel.appendChild(opt);
+    });
+    sel.value = geoState.country;
+  }
+
+  function renderGeo() {
+    var g = geoData();
+    var list = geoList();
+    var hasData = !!(g && list.length);
+
+    $("empty-state").hidden = true;
+    $("page-geo").hidden = false;
+    $("geo-empty").hidden = hasData;
+    $("geo-content").hidden = !hasData;
+    if (!hasData) return;
+
+    /* Выбранной страны может не оказаться в новой выгрузке — тогда молча
+       возвращаемся ко всем, иначе раздел показал бы пустые плитки. */
+    if (geoState.country) {
+      var still = false;
+      for (var i = 0; i < list.length; i++) { if (list[i].code === geoState.country) still = true; }
+      if (!still) geoState.country = "";
+    }
+    geoFillPicker();
+
+    var meta = g.meta || {};
+    var totals = geoScopeTotals() || {};
+    var all = g.totals || {};
+
+    $("geo-range").textContent = T("geo.range")
+      .replace("{from}", meta.periodFrom || "—")
+      .replace("{to}", meta.periodTo || "—")
+      .replace("{d}", String(meta.daysCovered || 0));
+    $("geo-caption").textContent = T("geo.caption");
+    $("geo-products-scope").textContent = geoScopeLabel();
+
+    /* ---- Плитки показателей ---------------------------------------------
+       Дельт нет намеренно: период задан выгрузкой, сравнивать его не с чем.
+       Метр на плитке-герое — доля выбранной страны среди всех; при выборе
+       всех стран он не нужен, там доля равна единице по построению. */
+    renderStat($("geo-kpi-gross"), {
+      label: T("geo.kpi.gross"),
+      value: geoEur(totals.gross),
+      note: T("geo.kpi.grossNote"),
+      meter: (geoState.country && all.gross > 0)
+        ? { value: (totals.gross || 0) / all.gross, label: T("geo.kpi.shareOfAll") }
+        : null,
+      hero: true
+    });
+    renderStat($("geo-kpi-units"), {
+      label: T("geo.kpi.units"),
+      value: geoUnits(totals.units),
+      note: T("geo.kpi.unitsNote")
+    });
+    renderStat($("geo-kpi-net"), {
+      label: T("geo.kpi.net"),
+      value: geoEur(totals.net),
+      note: T("geo.kpi.netNote").replace("{v}", geoEur(totals.vat))
+    });
+    renderStat($("geo-kpi-orders"), {
+      label: T("geo.kpi.orders"),
+      value: geoUnits(totals.orders),
+      note: T("geo.kpi.ordersNote")
+    });
+    /* Средний чек делим на заказы, а не на позиции: в одном заказе бывает
+       несколько строк, и деление на строки занизило бы цифру. */
+    var avg = (totals.orders > 0) ? (totals.gross || 0) / totals.orders : null;
+    renderStat($("geo-kpi-avg"), {
+      label: T("geo.kpi.avg"),
+      value: geoEur(avg),
+      note: T("geo.kpi.avgNote")
+    });
+
+    /* ---- Продажи по странам ---------------------------------------------
+       Все страны показываем всегда, даже когда выбрана одна: смысл графика
+       именно в сравнении, а один столбец сравнивать не с чем. */
+    global.Charts.barsH($("chart-geo-countries"), {
+      items: list.map(function (c) { return { label: geoName(c), value: c.gross || 0 }; }),
+      formatValue: function (v) { return Fmt.moneyCompact(v, "EUR"); },
+      valueName: T("geo.col.gross"),
+      color: "var(--series-1)",
+      ariaLabel: T("geo.byCountry")
+    });
+    var allGross = all.gross || 0;
+    global.Charts.table($("table-geo-countries"), {
+      caption: T("geo.byCountry"),
+      columns: [
+        { label: T("geo.col.country") },
+        { label: T("geo.col.units"), numeric: true },
+        { label: T("geo.col.gross"), numeric: true },
+        { label: T("table.share"), numeric: true }
+      ],
+      rows: list.map(function (c) {
+        return [
+          geoName(c) + " (" + c.code + ")",
+          geoUnits(c.units),
+          geoEur(c.gross),
+          allGross > 0 ? Fmt.percent((c.gross || 0) / allGross, 1) : "—"
+        ];
+      }),
+      footRow: [T("table.total"), geoUnits(all.units), geoEur(all.gross), ""]
+    });
+
+    /* ---- Помесячная динамика --------------------------------------------
+       На графике только деньги. Штуки — другая единица измерения, а вторая
+       ось Y ради них запрещена методичкой; они лежат в табличном двойнике. */
+    var months = geoScopeMonths();
+    /* Неполный месяц уводит линию в пол: срез до 1 июля даёт в июле
+       один день из тридцати одного. На графике его не показываем —
+       подпись рядом не спасает, картинку читают быстрее текста.
+       В таблице и в итогах он есть, просто помечен звёздочкой. */
+    var partial = months.filter(geoMonthPartial);
+    var chartMonths = months.filter(function (m) { return !geoMonthPartial(m); });
+    $("geo-trend-scope").textContent = geoScopeLabel() + (partial.length
+      ? " · " + T("geo.partialMonth").replace("{m}", partial.map(function (m) {
+          return geoMonthLabel(m.month, false) + " — " + m.days + "/" + m.monthDays;
+        }).join(", "))
+      : "");
+    global.Charts.line($("chart-geo-trend"), {
+      labels: chartMonths.map(function (m) { return m.month; }),
+      series: [{
+        name: T("geo.col.gross"),
+        values: chartMonths.map(function (m) { return m.gross || 0; })
+      }],
+      formatY: function (v, axis) {
+        return axis ? Fmt.moneyCompact(v, "EUR") : Fmt.money(v, "EUR", 2);
+      },
+      formatX: function (m, full) { return geoMonthLabel(m, full); },
+      ariaLabel: T("geo.trend"),
+      height: 220
+    });
+    global.Charts.table($("table-geo-trend"), {
+      caption: T("geo.trend"),
+      columns: [
+        { label: T("geo.col.month") },
+        { label: T("geo.col.units"), numeric: true },
+        { label: T("geo.col.gross"), numeric: true },
+        { label: T("geo.col.net"), numeric: true }
+      ],
+      rows: months.map(function (m) {
+        return [
+          geoMonthLabel(m.month, true) + (geoMonthPartial(m) ? " *" : ""),
+          geoUnits(m.units), geoEur(m.gross), geoEur(m.net)
+        ];
+      }),
+      footRow: [
+        T("table.total"),
+        geoUnits(months.reduce(function (s, m) { return s + (m.units || 0); }, 0)),
+        geoEur(months.reduce(function (s, m) { return s + (m.gross || 0); }, 0)),
+        geoEur(months.reduce(function (s, m) { return s + (m.net || 0); }, 0))
+      ]
+    });
+
+    /* ---- Товары ----------------------------------------------------------
+       Главная таблица раздела. Название — то, на которое пришлось больше
+       всего проданных единиц: один ASIN на Amazon.es и Amazon.de называется
+       по-разному, и без канонизации подпись строки менялась бы при
+       переключении страны. */
+    var products = geoScopeProducts();
+    var scopeGross = totals.gross || 0;
+    global.Charts.table($("geo-products"), {
+      caption: T("geo.products"),
+      columns: [
+        { label: T("geo.col.product") },
+        { label: T("geo.col.asin") },
+        { label: T("geo.col.units"), numeric: true },
+        { label: T("geo.col.orders"), numeric: true },
+        { label: T("geo.col.gross"), numeric: true },
+        { label: T("geo.col.net"), numeric: true },
+        { label: T("table.share"), numeric: true }
+      ],
+      rows: products.map(function (p) {
+        return [
+          p.title || "—",
+          p.asin,
+          geoUnits(p.units),
+          geoUnits(p.orders),
+          geoEur(p.gross),
+          geoEur(p.net),
+          scopeGross > 0 ? Fmt.percent((p.gross || 0) / scopeGross, 1) : "—"
+        ];
+      }),
+      footRow: [
+        T("table.total"), "",
+        geoUnits(totals.units),
+        geoUnits(totals.orders),
+        geoEur(totals.gross),
+        geoEur(totals.net),
+        ""
+      ]
+    });
+
+    /* ---- Чего в этих цифрах нет ------------------------------------------
+       Список постоянный: это ограничения источника, а не состояние выгрузки. */
+    var gaps = $("geo-gaps");
+    gaps.textContent = "";
+    ["geo.gap.returns", "geo.gap.tz", "geo.gap.fees", "geo.gap.storefront"].forEach(function (k) {
+      gaps.appendChild(el("li", null, T(k)));
+    });
+  }
+
+  /* ======================================================================
      Раздел «Маржа по странам»
      ----------------------------------------------------------------------
      Источник — узел margin: выручка нетто из отчёта заказов, комиссии и
@@ -2954,6 +3293,15 @@
       sqpSel.addEventListener("change", function () {
         sqpState.asin = sqpSel.value;
         renderSqp20();
+      });
+    }
+    /* Переключатель страны в разделе «Страны доставки» — местный,
+       как и переключатель товара выше: меняется только этот раздел. */
+    var geoSel = $("geo-country");
+    if (geoSel) {
+      geoSel.addEventListener("change", function () {
+        geoState.country = geoSel.value;
+        renderGeo();
       });
     }
     wireTableToggles();
