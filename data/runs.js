@@ -1,7 +1,7 @@
 /* Журнал синхронизаций. Собирается автоматически, руками не править. */
 window.DASHBOARD_RUNS = {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-20T03:19:03Z",
+  "updatedAt": "2026-08-20T06:06:55Z",
   "integrations": [
     {
       "id": "amazon-economics",
@@ -12,6 +12,81 @@ window.DASHBOARD_RUNS = {
     }
   ],
   "runs": [
+    {
+      "id": "32337908095",
+      "integration": "amazon-economics",
+      "trigger": "schedule",
+      "status": "failed",
+      "startedAt": "2026-08-20T06:02:04Z",
+      "finishedAt": "2026-08-20T06:06:55Z",
+      "durationSec": 291,
+      "period": {
+        "from": "2026-01-01",
+        "to": "2026-08-19"
+      },
+      "coverage": null,
+      "steps": [
+        {
+          "name": "Выгрузка экономики из Amazon",
+          "status": "failed",
+          "durationSec": 281,
+          "detail": "Response status code does not indicate success: 429 ()."
+        },
+        {
+          "name": "Сборка данных дашборда",
+          "status": "skipped",
+          "durationSec": 0,
+          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
+        },
+        {
+          "name": "База знаний в payload",
+          "status": "skipped",
+          "durationSec": 0,
+          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
+        },
+        {
+          "name": "Данные маржи в payload",
+          "status": "skipped",
+          "durationSec": 0,
+          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
+        },
+        {
+          "name": "Поисковые запросы в payload",
+          "status": "skipped",
+          "durationSec": 0,
+          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
+        },
+        {
+          "name": "Данные по запасам FBA",
+          "status": "skipped",
+          "durationSec": 0,
+          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
+        },
+        {
+          "name": "Запасы в payload",
+          "status": "skipped",
+          "durationSec": 0,
+          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
+        },
+        {
+          "name": "Страны доставки в payload",
+          "status": "skipped",
+          "durationSec": 0,
+          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
+        },
+        {
+          "name": "Шифрование файла данных",
+          "status": "skipped",
+          "durationSec": 0,
+          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
+        }
+      ],
+      "error": {
+        "type": "Выгрузка Data Kiosk",
+        "message": "Response status code does not indicate success: 429 ()."
+      },
+      "runUrl": "https://github.com/HoffenbachHafurov/amazon-sp-api-integration/actions/runs/32337908095"
+    },
     {
       "id": "32327501133",
       "integration": "amazon-economics",
