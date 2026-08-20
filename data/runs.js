@@ -1,7 +1,7 @@
 /* Журнал синхронизаций. Собирается автоматически, руками не править. */
 window.DASHBOARD_RUNS = {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-20T06:06:55Z",
+  "updatedAt": "2026-08-20T12:34:48Z",
   "integrations": [
     {
       "id": "amazon-economics",
@@ -12,6 +12,81 @@ window.DASHBOARD_RUNS = {
     }
   ],
   "runs": [
+    {
+      "id": "32361992922",
+      "integration": "amazon-economics",
+      "trigger": "schedule",
+      "status": "failed",
+      "startedAt": "2026-08-20T11:04:13Z",
+      "finishedAt": "2026-08-20T12:34:48Z",
+      "durationSec": 5435,
+      "period": {
+        "from": "2026-01-01",
+        "to": "2026-08-19"
+      },
+      "coverage": null,
+      "steps": [
+        {
+          "name": "Выгрузка экономики из Amazon",
+          "status": "success",
+          "durationSec": 5418,
+          "detail": ""
+        },
+        {
+          "name": "Сборка данных дашборда",
+          "status": "failed",
+          "durationSec": 0,
+          "detail": "Не найден ни один .jsonl в .cache\\economics. Сначала запустите Export-SpApiEconomics.ps1"
+        },
+        {
+          "name": "База знаний в payload",
+          "status": "skipped",
+          "durationSec": 0,
+          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
+        },
+        {
+          "name": "Данные маржи в payload",
+          "status": "skipped",
+          "durationSec": 0,
+          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
+        },
+        {
+          "name": "Поисковые запросы в payload",
+          "status": "skipped",
+          "durationSec": 0,
+          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
+        },
+        {
+          "name": "Данные по запасам FBA",
+          "status": "skipped",
+          "durationSec": 0,
+          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
+        },
+        {
+          "name": "Запасы в payload",
+          "status": "skipped",
+          "durationSec": 0,
+          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
+        },
+        {
+          "name": "Страны доставки в payload",
+          "status": "skipped",
+          "durationSec": 0,
+          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
+        },
+        {
+          "name": "Шифрование файла данных",
+          "status": "skipped",
+          "durationSec": 0,
+          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
+        }
+      ],
+      "error": {
+        "type": "Сборка payload",
+        "message": "Не найден ни один .jsonl в .cache\\economics. Сначала запустите Export-SpApiEconomics.ps1"
+      },
+      "runUrl": "https://github.com/HoffenbachHafurov/amazon-sp-api-integration/actions/runs/32361992922"
+    },
     {
       "id": "32337908095",
       "integration": "amazon-economics",
