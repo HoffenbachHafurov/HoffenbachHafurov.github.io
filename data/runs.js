@@ -1,7 +1,7 @@
 /* Журнал синхронизаций. Собирается автоматически, руками не править. */
 window.DASHBOARD_RUNS = {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-02T16:53:48Z",
+  "updatedAt": "2026-09-03T04:54:04Z",
   "integrations": [
     {
       "id": "amazon-economics",
@@ -12,6 +12,85 @@ window.DASHBOARD_RUNS = {
     }
   ],
   "runs": [
+    {
+      "id": "33714254963",
+      "integration": "amazon-economics",
+      "trigger": "schedule",
+      "status": "success",
+      "startedAt": "2026-09-03T04:13:34Z",
+      "finishedAt": "2026-09-03T04:54:04Z",
+      "durationSec": 2430,
+      "period": {
+        "from": "2026-01-01",
+        "to": "2026-09-02"
+      },
+      "coverage": {
+        "expectedDays": 245,
+        "coveredDays": 245,
+        "percent": 100.0,
+        "rows": 2695,
+        "feeRows": 12939,
+        "productRows": 22752
+      },
+      "steps": [
+        {
+          "name": "Выгрузка экономики из Amazon",
+          "status": "success",
+          "durationSec": 1102,
+          "detail": "154 840 строк, 89 МБ"
+        },
+        {
+          "name": "Сборка данных дашборда",
+          "status": "success",
+          "durationSec": 39,
+          "detail": "6,1 МБ"
+        },
+        {
+          "name": "База знаний в payload",
+          "status": "success",
+          "durationSec": 0,
+          "detail": "6,5 МБ"
+        },
+        {
+          "name": "Данные маржи в payload",
+          "status": "success",
+          "durationSec": 35,
+          "detail": "7,8 МБ"
+        },
+        {
+          "name": "Поисковые запросы в payload",
+          "status": "failed",
+          "durationSec": 623,
+          "detail": "Отчёт B072PPT9V3 B0DMTJXH9W B0854MW97N B07JZCWJMW B07PPXKJPQ B0DJ1DGY6J B0F63Q4BLX B0933B1NKB B0DMTMHVK4 B0FVG9MZR8 B0DNT4FNZ9 B0933F6ZWD B08NCRRM6M B0FNX21TZF B0F79C4Y9C B0GGJ6VRCQ B0DNTPCLRN B0933DBFMS за 2026-08-23..2026-08-29 не собрался за отведённое время"
+        },
+        {
+          "name": "Данные по запасам FBA",
+          "status": "success",
+          "durationSec": 613,
+          "detail": "позиций 25, единиц за порогом 1574"
+        },
+        {
+          "name": "Запасы в payload",
+          "status": "success",
+          "durationSec": 0,
+          "detail": "7,8 МБ"
+        },
+        {
+          "name": "Страны доставки в payload",
+          "status": "success",
+          "durationSec": 0,
+          "detail": "2026-01-01..2026-07-01, стран 6, 6 076 шт"
+        },
+        {
+          "name": "Шифрование файла данных",
+          "status": "success",
+          "durationSec": 2,
+          "detail": "1 303 КБ"
+        }
+      ],
+      "error": null,
+      "runUrl": "https://github.com/HoffenbachHafurov/amazon-sp-api-integration/actions/runs/33714254963"
+    },
     {
       "id": "33655194985",
       "integration": "amazon-economics",
