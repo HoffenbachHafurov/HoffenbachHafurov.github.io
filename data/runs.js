@@ -1,7 +1,7 @@
 /* Журнал синхронизаций. Собирается автоматически, руками не править. */
 window.DASHBOARD_RUNS = {
   "schemaVersion": 1,
-  "updatedAt": "2026-11-16T22:11:38Z",
+  "updatedAt": "2026-11-17T08:05:01Z",
   "integrations": [
     {
       "id": "amazon-economics",
@@ -12,6 +12,85 @@ window.DASHBOARD_RUNS = {
     }
   ],
   "runs": [
+    {
+      "id": "44041091020",
+      "integration": "amazon-economics",
+      "trigger": "schedule",
+      "status": "success",
+      "startedAt": "2026-11-17T07:45:07Z",
+      "finishedAt": "2026-11-17T08:05:01Z",
+      "durationSec": 1194,
+      "period": {
+        "from": "2026-01-01",
+        "to": "2026-11-16"
+      },
+      "coverage": {
+        "expectedDays": 320,
+        "coveredDays": 320,
+        "percent": 100.0,
+        "rows": 3200,
+        "feeRows": 17400,
+        "productRows": 30174
+      },
+      "steps": [
+        {
+          "name": "Выгрузка экономики из Amazon",
+          "status": "success",
+          "durationSec": 126,
+          "detail": "205 440 строк, 118 МБ"
+        },
+        {
+          "name": "Сборка данных дашборда",
+          "status": "success",
+          "durationSec": 53,
+          "detail": "8,0 МБ"
+        },
+        {
+          "name": "База знаний в payload",
+          "status": "success",
+          "durationSec": 0,
+          "detail": "8,4 МБ"
+        },
+        {
+          "name": "Данные маржи в payload",
+          "status": "success",
+          "durationSec": 46,
+          "detail": "10,1 МБ"
+        },
+        {
+          "name": "Поисковые запросы в payload",
+          "status": "success",
+          "durationSec": 182,
+          "detail": "10,4 МБ"
+        },
+        {
+          "name": "Данные по запасам FBA",
+          "status": "success",
+          "durationSec": 765,
+          "detail": "позиций 27, единиц за порогом 0"
+        },
+        {
+          "name": "Запасы в payload",
+          "status": "success",
+          "durationSec": 0,
+          "detail": "10,5 МБ"
+        },
+        {
+          "name": "Страны доставки в payload",
+          "status": "success",
+          "durationSec": 1,
+          "detail": "2026-01-01..2026-10-31, стран 6, 12 240 шт"
+        },
+        {
+          "name": "Шифрование файла данных",
+          "status": "success",
+          "durationSec": 2,
+          "detail": "1 667 КБ"
+        }
+      ],
+      "error": null,
+      "runUrl": "https://github.com/HoffenbachHafurov/amazon-sp-api-integration/actions/runs/44041091020"
+    },
     {
       "id": "43964922298",
       "integration": "amazon-economics",
@@ -15410,55 +15489,6 @@ window.DASHBOARD_RUNS = {
       ],
       "error": null,
       "runUrl": "https://github.com/HoffenbachHafurov/amazon-sp-api-integration/actions/runs/31700842441"
-    },
-    {
-      "id": "31699928330",
-      "integration": "amazon-economics",
-      "trigger": "workflow_dispatch",
-      "status": "success",
-      "startedAt": "2026-08-13T12:25:25Z",
-      "finishedAt": "2026-08-13T12:39:36Z",
-      "durationSec": 851,
-      "period": {
-        "from": "2026-01-01",
-        "to": "2026-08-12"
-      },
-      "coverage": {
-        "expectedDays": 224,
-        "coveredDays": 224,
-        "percent": 100.0,
-        "rows": 2464,
-        "feeRows": 11780,
-        "productRows": 20691
-      },
-      "steps": [
-        {
-          "name": "Выгрузка экономики из Amazon",
-          "status": "success",
-          "durationSec": 795,
-          "detail": "140 448 строк, 80 МБ"
-        },
-        {
-          "name": "Сборка данных дашборда",
-          "status": "success",
-          "durationSec": 40,
-          "detail": "5,5 МБ"
-        },
-        {
-          "name": "База знаний в payload",
-          "status": "success",
-          "durationSec": 0,
-          "detail": "5,9 МБ"
-        },
-        {
-          "name": "Шифрование файла данных",
-          "status": "success",
-          "durationSec": 2,
-          "detail": "956 КБ"
-        }
-      ],
-      "error": null,
-      "runUrl": "https://github.com/HoffenbachHafurov/amazon-sp-api-integration/actions/runs/31699928330"
     }
   ]
 };
