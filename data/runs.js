@@ -1,7 +1,7 @@
 /* Журнал синхронизаций. Собирается автоматически, руками не править. */
 window.DASHBOARD_RUNS = {
   "schemaVersion": 1,
-  "updatedAt": "2026-11-26T08:17:41Z",
+  "updatedAt": "2026-11-26T21:40:46Z",
   "integrations": [
     {
       "id": "amazon-economics",
@@ -12,6 +12,85 @@ window.DASHBOARD_RUNS = {
     }
   ],
   "runs": [
+    {
+      "id": "45897847394",
+      "integration": "amazon-economics",
+      "trigger": "schedule",
+      "status": "success",
+      "startedAt": "2026-11-26T21:23:53Z",
+      "finishedAt": "2026-11-26T21:40:46Z",
+      "durationSec": 1013,
+      "period": {
+        "from": "2026-01-01",
+        "to": "2026-11-25"
+      },
+      "coverage": {
+        "expectedDays": 329,
+        "coveredDays": 329,
+        "percent": 100.0,
+        "rows": 3290,
+        "feeRows": 18020,
+        "productRows": 30864
+      },
+      "steps": [
+        {
+          "name": "Выгрузка экономики из Amazon",
+          "status": "success",
+          "durationSec": 126,
+          "detail": "211 547 строк, 122 МБ"
+        },
+        {
+          "name": "Сборка данных дашборда",
+          "status": "success",
+          "durationSec": 46,
+          "detail": "8,2 МБ"
+        },
+        {
+          "name": "База знаний в payload",
+          "status": "success",
+          "durationSec": 0,
+          "detail": "8,6 МБ"
+        },
+        {
+          "name": "Данные маржи в payload",
+          "status": "success",
+          "durationSec": 40,
+          "detail": "10,3 МБ"
+        },
+        {
+          "name": "Поисковые запросы в payload",
+          "status": "success",
+          "durationSec": 172,
+          "detail": "10,7 МБ"
+        },
+        {
+          "name": "Данные по запасам FBA",
+          "status": "success",
+          "durationSec": 614,
+          "detail": "позиций 27, единиц за порогом 1018"
+        },
+        {
+          "name": "Запасы в payload",
+          "status": "success",
+          "durationSec": 0,
+          "detail": "10,8 МБ"
+        },
+        {
+          "name": "Страны доставки в payload",
+          "status": "success",
+          "durationSec": 1,
+          "detail": "2026-01-01..2026-10-31, стран 6, 12 240 шт"
+        },
+        {
+          "name": "Шифрование файла данных",
+          "status": "success",
+          "durationSec": 2,
+          "detail": "1 713 КБ"
+        }
+      ],
+      "error": null,
+      "runUrl": "https://github.com/HoffenbachHafurov/amazon-sp-api-integration/actions/runs/45897847394"
+    },
     {
       "id": "45779827239",
       "integration": "amazon-economics",
@@ -15654,75 +15733,6 @@ window.DASHBOARD_RUNS = {
         "message": "Response status code does not indicate success: 429 ()."
       },
       "runUrl": "https://github.com/HoffenbachHafurov/amazon-sp-api-integration/actions/runs/31924313724"
-    },
-    {
-      "id": "31907970479",
-      "integration": "amazon-economics",
-      "trigger": "schedule",
-      "status": "failed",
-      "startedAt": "2026-08-15T20:54:40Z",
-      "finishedAt": "2026-08-15T20:59:25Z",
-      "durationSec": 285,
-      "period": {
-        "from": "2026-01-01",
-        "to": "2026-08-14"
-      },
-      "coverage": null,
-      "steps": [
-        {
-          "name": "Выгрузка экономики из Amazon",
-          "status": "failed",
-          "durationSec": 280,
-          "detail": "Response status code does not indicate success: 429 ()."
-        },
-        {
-          "name": "Сборка данных дашборда",
-          "status": "skipped",
-          "durationSec": 0,
-          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
-        },
-        {
-          "name": "База знаний в payload",
-          "status": "skipped",
-          "durationSec": 0,
-          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
-        },
-        {
-          "name": "Данные маржи в payload",
-          "status": "skipped",
-          "durationSec": 0,
-          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
-        },
-        {
-          "name": "Поисковые запросы в payload",
-          "status": "skipped",
-          "durationSec": 0,
-          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
-        },
-        {
-          "name": "Данные по запасам FBA",
-          "status": "skipped",
-          "durationSec": 0,
-          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
-        },
-        {
-          "name": "Запасы в payload",
-          "status": "skipped",
-          "durationSec": 0,
-          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
-        },
-        {
-          "name": "Шифрование файла данных",
-          "status": "skipped",
-          "durationSec": 0,
-          "detail": "Пропущен: прогон остановлен на предыдущем шаге"
-        }
-      ],
-      "error": {
-        "type": "Выгрузка Data Kiosk",
-        "message": "Response status code does not indicate success: 429 ()."
-      },
-      "runUrl": "https://github.com/HoffenbachHafurov/amazon-sp-api-integration/actions/runs/31907970479"
     }
   ]
 };
